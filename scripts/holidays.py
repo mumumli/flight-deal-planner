@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-"""Holiday calendar -> travel windows -> leave-optimised bridges.
+"""Holiday calendar -> trip shapes -> leave-costed date pairs.
 
-Bundled calendars (see CALENDAR_META for provenance and confidence):
+Two things this module deliberately does NOT do the naive way:
 
-    SG  Singapore        official
-    HK  Hong Kong        official (gazetted 2027 list)
-    JP  Japan            rule-based
-    AU  Australia        rule-based (national holidays only)
-    US  United States    rule-based (federal holidays only)
-    CN  mainland China   fixed dates only  -- lunar festivals NOT included
-    KR  South Korea      fixed dates only  -- lunar festivals NOT included
-    MY  Malaysia         fixed dates only  -- state + Islamic holidays NOT included
+1. **Substitute days are derived by rule, not hard-coded.** Feed it the dates the
+   government gazetted and it applies the country's rule:
+       SG  a Sunday holiday moves to Monday; a Saturday holiday does NOT move
+       HK  the gazette already lists substitutes, so none are applied
+       US  a Saturday holiday moves to Friday, a Sunday one to Monday
+       CN  no automatic substitute -- 调休 is announced separately and is
+           supplied as *make-up workdays* (weekends that become working days)
 
-`confidence` is printed with the result. Anything below "official" means: check
-the government calendar before you book a non-refundable fare. For full
-coverage of a country not listed, pass `--file holidays.csv` (date,name rows).
+2. **A "window" is not fixed in advance.** For each holiday the module
+   enumerates the date pairs you could actually fly -- leave the day before,
+   the day after, both, neither -- and costs each one in annual-leave days.
+   Choosing between them is then a question of fare, not of habit.
 
 Usage
 -----
     python3 holidays.py --country SG --year 2027
-    python3 holidays.py --country JP --year 2027 --max-leave 2 --json
+    python3 holidays.py --country SG --year 2027 --max-leave 2 --json
     python3 holidays.py --file my-holidays.csv --year 2027
 """
 import argparse
@@ -27,7 +27,7 @@ import json
 from datetime import date, timedelta
 from itertools import combinations
 
-# --- helpers -----------------------------------------------------------------
+# --- date helpers ------------------------------------------------------------
 
 
 def easter(year):
@@ -46,7 +46,6 @@ def easter(year):
 
 
 def nth_weekday(year, month, weekday, n):
-    """n-th weekday of a month (n=1..5). weekday: Mon=0."""
     d = date(year, month, 1)
     d += timedelta(days=(weekday - d.weekday()) % 7)
     return d + timedelta(days=7 * (n - 1))
@@ -57,204 +56,197 @@ def last_weekday(year, month, weekday):
     return d - timedelta(days=(d.weekday() - weekday) % 7)
 
 
-def observed(d):
-    """US-style: a Saturday holiday is observed Friday, Sunday -> Monday."""
-    if d.weekday() == 5:
-        return d - timedelta(days=1)
-    if d.weekday() == 6:
-        return d + timedelta(days=1)
-    return d
+# --- substitute-day rules ----------------------------------------------------
 
 
-# --- calendar builders -------------------------------------------------------
+def substitute_sun_to_mon(days):
+    """SG / MY: a Sunday holiday moves to Monday. A Saturday one does not move."""
+    out = dict(days)
+    for d, name in list(days.items()):
+        if d.weekday() == 6:
+            out.setdefault(d + timedelta(days=1), f"{name} (observed)")
+    return out
 
 
-def _hk(year):
-    """Gazetted general holidays for 2027 (gov.hk). Other years: supply --file."""
-    if year != 2027:
-        return {}
-    return {
-        "2027-01-01": "The first day of January",
-        "2027-02-06": "Lunar New Year's Day",
-        "2027-02-08": "The third day of Lunar New Year",
-        "2027-02-09": "The fourth day of Lunar New Year",
-        "2027-03-26": "Good Friday",
-        "2027-03-27": "The day following Good Friday",
-        "2027-03-29": "Easter Monday",
-        "2027-04-05": "Ching Ming Festival",
-        "2027-05-01": "Labour Day",
-        "2027-05-13": "The Birthday of the Buddha",
-        "2027-06-09": "Tuen Ng Festival",
-        "2027-07-01": "HKSAR Establishment Day",
-        "2027-09-16": "Day following the Chinese Mid-Autumn Festival",
-        "2027-10-01": "National Day",
-        "2027-10-08": "Chung Yeung Festival",
-        "2027-12-25": "Christmas Day",
-        "2027-12-27": "The first weekday after Christmas Day",
-    }
+def substitute_us(days):
+    """US: Saturday -> Friday, Sunday -> Monday."""
+    out = {}
+    for d, name in days.items():
+        if d.weekday() == 5:
+            out[d - timedelta(days=1)] = f"{name} (observed)"
+        elif d.weekday() == 6:
+            out[d + timedelta(days=1)] = f"{name} (observed)"
+        out.setdefault(d, name)
+    return out
 
 
-def _sg(year):
+# --- base calendars (gazetted dates BEFORE substitution where a rule exists) --
+
+
+def _sg_raw(year):
+    """Singapore MOM dates as gazetted; substitutes are applied by rule."""
     if year == 2026:
-        return {
-            "2026-01-01": "New Year's Day", "2026-02-17": "Chinese New Year",
-            "2026-02-18": "Chinese New Year (day 2)", "2026-03-21": "Hari Raya Puasa",
-            "2026-04-03": "Good Friday", "2026-05-01": "Labour Day",
-            "2026-05-27": "Hari Raya Haji", "2026-06-01": "Vesak Day (observed)",
-            "2026-08-10": "National Day (observed)", "2026-11-09": "Deepavali (observed)",
-            "2026-12-25": "Christmas Day",
-        }
+        return {date(2026, 1, 1): "New Year's Day",
+                date(2026, 2, 17): "Chinese New Year",
+                date(2026, 2, 18): "Chinese New Year",
+                date(2026, 3, 21): "Hari Raya Puasa",
+                date(2026, 4, 3): "Good Friday", date(2026, 5, 1): "Labour Day",
+                date(2026, 5, 27): "Hari Raya Haji", date(2026, 5, 31): "Vesak Day",
+                date(2026, 8, 9): "National Day", date(2026, 11, 8): "Deepavali",
+                date(2026, 12, 25): "Christmas Day"}
     if year == 2027:
-        return {
-            "2027-01-01": "New Year's Day", "2027-02-06": "Chinese New Year",
-            "2027-02-07": "Chinese New Year (day 2)",
-            "2027-02-08": "Chinese New Year (observed)",
-            "2027-03-10": "Hari Raya Puasa", "2027-03-26": "Good Friday",
-            "2027-05-01": "Labour Day", "2027-05-17": "Hari Raya Haji",
-            "2027-05-20": "Vesak Day", "2027-08-09": "National Day",
-            "2027-10-28": "Deepavali", "2027-12-25": "Christmas Day",
-        }
+        return {date(2027, 1, 1): "New Year's Day",
+                date(2027, 2, 6): "Chinese New Year",
+                date(2027, 2, 7): "Chinese New Year",
+                date(2027, 3, 10): "Hari Raya Puasa",
+                date(2027, 3, 26): "Good Friday", date(2027, 5, 1): "Labour Day",
+                date(2027, 5, 17): "Hari Raya Haji", date(2027, 5, 20): "Vesak Day",
+                date(2027, 8, 9): "National Day", date(2027, 10, 28): "Deepavali",
+                date(2027, 12, 25): "Christmas Day"}
     return {}
 
 
+def _hk_raw(year):
+    """HK 2027: the gazette already lists substitutes, so no rule is applied."""
+    if year != 2027:
+        return {}
+    return {date(2027, 1, 1): "The first day of January",
+            date(2027, 2, 6): "Lunar New Year's Day",
+            date(2027, 2, 8): "The third day of Lunar New Year",
+            date(2027, 2, 9): "The fourth day of Lunar New Year",
+            date(2027, 3, 26): "Good Friday",
+            date(2027, 3, 27): "The day following Good Friday",
+            date(2027, 3, 29): "Easter Monday",
+            date(2027, 4, 5): "Ching Ming Festival", date(2027, 5, 1): "Labour Day",
+            date(2027, 5, 13): "The Birthday of the Buddha",
+            date(2027, 6, 9): "Tuen Ng Festival",
+            date(2027, 7, 1): "HKSAR Establishment Day",
+            date(2027, 9, 16): "Day following Mid-Autumn Festival",
+            date(2027, 10, 1): "National Day",
+            date(2027, 10, 8): "Chung Yeung Festival",
+            date(2027, 12, 25): "Christmas Day",
+            date(2027, 12, 27): "The first weekday after Christmas Day"}
+
+
 def _jp(year):
-    """Cabinet Office rules. Equinox days are approximate to +/-1 day."""
     base = 20.8431 + 0.242194 * (year - 1980) - (year - 1980) // 4
     aut = 23.2488 + 0.242194 * (year - 1980) - (year - 1980) // 4
-    vernal = date(year, 3, int(base))
-    autumnal = date(year, 9, int(aut))
-    d = {
-        date(year, 1, 1): "New Year's Day",
-        nth_weekday(year, 1, 0, 2): "Coming of Age Day",
-        date(year, 2, 11): "National Foundation Day",
-        date(year, 2, 23): "Emperor's Birthday",
-        vernal: "Vernal Equinox Day",
-        date(year, 4, 29): "Showa Day",
-        date(year, 5, 3): "Constitution Memorial Day",
-        date(year, 5, 4): "Greenery Day",
-        date(year, 5, 5): "Children's Day",
-        nth_weekday(year, 7, 0, 3): "Marine Day",
-        date(year, 8, 11): "Mountain Day",
-        nth_weekday(year, 9, 0, 3): "Respect for the Aged Day",
-        autumnal: "Autumnal Equinox Day",
-        nth_weekday(year, 10, 0, 2): "Sports Day",
-        date(year, 11, 3): "Culture Day",
-        date(year, 11, 23): "Labour Thanksgiving Day",
-    }
-    return {k.isoformat(): v for k, v in d.items()}
+    return {date(year, 1, 1): "New Year's Day",
+            nth_weekday(year, 1, 0, 2): "Coming of Age Day",
+            date(year, 2, 11): "National Foundation Day",
+            date(year, 2, 23): "Emperor's Birthday",
+            date(year, 3, int(base)): "Vernal Equinox Day",
+            date(year, 4, 29): "Showa Day",
+            date(year, 5, 3): "Constitution Memorial Day",
+            date(year, 5, 4): "Greenery Day", date(year, 5, 5): "Children's Day",
+            nth_weekday(year, 7, 0, 3): "Marine Day",
+            date(year, 8, 11): "Mountain Day",
+            nth_weekday(year, 9, 0, 3): "Respect for the Aged Day",
+            date(year, 9, int(aut)): "Autumnal Equinox Day",
+            nth_weekday(year, 10, 0, 2): "Sports Day",
+            date(year, 11, 3): "Culture Day",
+            date(year, 11, 23): "Labour Thanksgiving Day"}
 
 
 def _au(year):
     e = easter(year)
-    d = {
-        date(year, 1, 1): "New Year's Day",
-        date(year, 1, 26): "Australia Day",
-        e - timedelta(days=2): "Good Friday",
-        e - timedelta(days=1): "Easter Saturday",
-        e: "Easter Sunday",
-        e + timedelta(days=1): "Easter Monday",
-        date(year, 4, 25): "Anzac Day",
-        nth_weekday(year, 6, 0, 2): "King's Birthday (national)",
-        date(year, 12, 25): "Christmas Day",
-        date(year, 12, 26): "Boxing Day",
-    }
-    return {k.isoformat(): v for k, v in d.items()}
+    d = {date(year, 1, 1): "New Year's Day", date(year, 1, 26): "Australia Day",
+         e - timedelta(days=2): "Good Friday",
+         e - timedelta(days=1): "Easter Saturday", e: "Easter Sunday",
+         e + timedelta(days=1): "Easter Monday", date(year, 4, 25): "Anzac Day",
+         nth_weekday(year, 6, 0, 2): "King's Birthday (national)",
+         date(year, 12, 25): "Christmas Day", date(year, 12, 26): "Boxing Day"}
+    out = dict(d)
+    for k in (date(year, 1, 26), date(year, 4, 25)):
+        if k.weekday() >= 5:
+            out.setdefault(k + timedelta(days=(7 - k.weekday()) % 7),
+                           f"{d[k]} (observed)")
+    return out
 
 
 def _us(year):
-    d = {
-        observed(date(year, 1, 1)): "New Year's Day",
-        nth_weekday(year, 1, 0, 3): "Martin Luther King Jr. Day",
-        nth_weekday(year, 2, 0, 3): "Washington's Birthday",
-        last_weekday(year, 5, 0): "Memorial Day",
-        observed(date(year, 6, 19)): "Juneteenth",
-        observed(date(year, 7, 4)): "Independence Day",
-        nth_weekday(year, 9, 0, 1): "Labor Day",
-        nth_weekday(year, 10, 0, 2): "Columbus Day",
-        observed(date(year, 11, 11)): "Veterans Day",
-        nth_weekday(year, 11, 3, 4): "Thanksgiving",
-        observed(date(year, 12, 25)): "Christmas Day",
-    }
-    return {k.isoformat(): v for k, v in d.items()}
+    return {date(year, 1, 1): "New Year's Day",
+            nth_weekday(year, 1, 0, 3): "Martin Luther King Jr. Day",
+            nth_weekday(year, 2, 0, 3): "Washington's Birthday",
+            last_weekday(year, 5, 0): "Memorial Day",
+            date(year, 6, 19): "Juneteenth",
+            date(year, 7, 4): "Independence Day",
+            nth_weekday(year, 9, 0, 1): "Labor Day",
+            nth_weekday(year, 10, 0, 2): "Columbus Day",
+            date(year, 11, 11): "Veterans Day",
+            nth_weekday(year, 11, 3, 4): "Thanksgiving",
+            date(year, 12, 25): "Christmas Day"}
 
 
 def _cn(year):
-    """Fixed-date mainland holidays only. Lunar festivals are NOT included."""
-    d = {date(year, 1, 1): "New Year's Day", date(year, 5, 1): "Labour Day",
-         date(year, 10, 1): "National Day"}
-    d[date(year, 4, 5)] = "Qingming Festival"
-    return {k.isoformat(): v for k, v in d.items()}
+    """Fixed-date only. 调休 is announced separately -- pass make-up workdays."""
+    return {date(year, 1, 1): "New Year's Day",
+            date(year, 4, 5): "Qingming Festival",
+            date(year, 5, 1): "Labour Day",
+            date(year, 10, 1): "National Day"}
 
 
 def _kr(year):
-    """Fixed-date Korean holidays only. Seollal / Chuseok NOT included."""
-    d = {date(year, 1, 1): "New Year's Day",
-         date(year, 3, 1): "Independence Movement Day",
-         date(year, 5, 5): "Children's Day", date(year, 6, 6): "Memorial Day",
-         date(year, 8, 15): "Liberation Day",
-         date(year, 10, 3): "National Foundation Day",
-         date(year, 10, 9): "Hangul Day", date(year, 12, 25): "Christmas Day"}
-    return {k.isoformat(): v for k, v in d.items()}
+    return {date(year, 1, 1): "New Year's Day",
+            date(year, 3, 1): "Independence Movement Day",
+            date(year, 5, 5): "Children's Day", date(year, 6, 6): "Memorial Day",
+            date(year, 8, 15): "Liberation Day",
+            date(year, 10, 3): "National Foundation Day",
+            date(year, 10, 9): "Hangul Day", date(year, 12, 25): "Christmas Day"}
 
 
 def _my(year):
-    """Fixed-date Malaysian holidays only. State / Islamic holidays NOT included."""
-    d = {date(year, 1, 1): "New Year's Day", date(year, 5, 1): "Labour Day",
-         date(year, 8, 31): "National Day", date(year, 9, 16): "Malaysia Day",
-         date(year, 12, 25): "Christmas Day"}
-    return {k.isoformat(): v for k, v in d.items()}
+    return {date(year, 1, 1): "New Year's Day", date(year, 5, 1): "Labour Day",
+            date(year, 8, 31): "National Day", date(year, 9, 16): "Malaysia Day",
+            date(year, 12, 25): "Christmas Day"}
 
 
-BUILDERS = {"SG": _sg, "HK": _hk, "JP": _jp, "AU": _au, "US": _us,
-            "CN": _cn, "KR": _kr, "MY": _my}
-
-CALENDAR_META = {
-    "SG": ("official", "Ministry of Manpower, Public Holidays"),
-    "HK": ("official", "gov.hk gazetted general holidays 2027"),
-    "JP": ("rule-based", "Cabinet Office holiday law; equinox dates +/-1 day"),
-    "AU": ("rule-based", "national holidays only; state variations not modelled"),
-    "US": ("rule-based", "federal holidays only, with observed-day shifting"),
-    "CN": ("fixed-dates-only", "lunar festivals omitted; State Council gives real breaks"),
-    "KR": ("fixed-dates-only", "Seollal and Chuseok omitted"),
-    "MY": ("fixed-dates-only", "state and Islamic holidays omitted"),
+CALENDARS = {
+    # code: (builder, substitute-rule, confidence, source)
+    "SG": (_sg_raw, substitute_sun_to_mon, "official",
+           "MOM; Sunday->Monday substitute applied by rule, Saturday not moved"),
+    "HK": (_hk_raw, None, "official", "gov.hk gazetted list for 2027"),
+    "JP": (_jp, None, "rule-based",
+           "Cabinet Office holiday law; equinox dates +/-1 day"),
+    "AU": (_au, None, "rule-based", "national holidays only; state variations not modelled"),
+    "US": (_us, substitute_us, "rule-based", "federal holidays with observed-day shifting"),
+    "CN": (_cn, None, "fixed-dates-only",
+           "lunar festivals omitted; 调休 supplied as make-up workdays"),
+    "KR": (_kr, None, "fixed-dates-only", "Seollal and Chuseok omitted"),
+    "MY": (_my, substitute_sun_to_mon, "fixed-dates-only",
+           "state and Islamic holidays omitted"),
 }
 
 
-def build(country, year):
+def build(country, year, workdays=None):
+    """Return (holidays, workdays, confidence, source)."""
     c = country.upper()
-    fn = BUILDERS.get(c)
-    if not fn:
-        return {}
-    return {date.fromisoformat(k): v for k, v in fn(year).items()}
+    fn, rule, conf, src = CALENDARS.get(c, (None, None, "unknown", "n/a"))
+    if fn is None:
+        return {}, set(), conf, src
+    raw = fn(year)
+    days = rule(raw) if rule else raw
+    return days, set(workdays or ()), conf, src
 
 
-# --- window analysis ---------------------------------------------------------
+# --- off-day logic -----------------------------------------------------------
 
 
-def is_off(d, hol):
-    return d.weekday() >= 5 or d in hol
+def make_is_off(holidays, workdays):
+    """Off when it is a weekend (unless a make-up workday) or a holiday."""
+    def is_off(d):
+        if d in workdays:
+            return False
+        return d.weekday() >= 5 or d in holidays
+    return is_off
 
 
-def block_for(year, hol, extra, anchor):
-    """The contiguous non-working block containing `anchor`."""
-    s = set(extra)
-    lo, hi = date(year, 1, 1), date(year, 12, 31)
-    start = anchor
-    while start - timedelta(days=1) >= lo and (
-            is_off(start - timedelta(days=1), hol) or (start - timedelta(days=1)) in s):
-        start -= timedelta(days=1)
-    end = anchor
-    while end + timedelta(days=1) <= hi and (
-            is_off(end + timedelta(days=1), hol) or (end + timedelta(days=1)) in s):
-        end += timedelta(days=1)
-    return start, end, (end - start).days + 1
-
-
-def runs(year, hol):
+def runs(year, holidays, workdays):
+    is_off = make_is_off(holidays, workdays)
     out, cur = [], []
     d = date(year, 1, 1)
     while d.year == year:
-        if is_off(d, hol):
+        if is_off(d):
             cur.append(d)
         elif cur:
             out.append(cur)
@@ -265,58 +257,162 @@ def runs(year, hol):
     return out
 
 
-def optimise(year, hol, max_leave=3):
+# --- trip shapes -------------------------------------------------------------
+
+
+def _workdays_between(a, b, is_off):
+    out, d = [], a
+    while d <= b:
+        if not is_off(d):
+            out.append(d)
+        d += timedelta(days=1)
+    return out
+
+
+def _clusters(blocks, gap=6):
+    """Merge holiday blocks that sit close enough to bridge with one leave run.
+
+    Singapore's May 2027 is the case that matters: Hari Raya Haji (Mon 17) and
+    Vesak Day (Thu 20) are three working days apart, so 3 days of leave buys a
+    single 9-night trip. Enumerating each block separately would never find it.
+    """
+    out = []
+    for b in blocks:
+        if out and (b[0] - out[-1][-1]).days <= gap:
+            out[-1] = out[-1] + b
+        else:
+            out.append(list(b))
+    return out
+
+
+def shapes_from(holidays, workdays, year, max_leave=3, per_holiday=8, max_nights=21,
+                include_weekends=False):
+    """Enumerate flyable date pairs around every holiday cluster, costed in leave."""
+    is_off = make_is_off(holidays, workdays)
+    blocks = [b for b in runs(year, holidays, workdays)
+              if any(d in holidays for d in b) or include_weekends]
+    out_shapes, seen = [], set()
+
+    # Each cluster yields both the long bridged shape and the short shape of
+    # every individual block inside it -- "just the Monday off" and "the whole
+    # nine days" are both real options and must be compared on price.
+    spans, seen_spans = [], set()
+    for cl in _clusters(blocks):
+        names = [holidays[d].replace(" (observed)", "") for d in cl if d in holidays]
+        cname = " + ".join(dict.fromkeys(names)) if names else "weekend"
+        spans.append((cl[0], cl[-1], cname, len(cl)))
+        for b in _clusters(blocks, gap=0):
+            if b[0] >= cl[0] and b[-1] <= cl[-1]:
+                bname = next((holidays[d].replace(" (observed)", "")
+                              for d in b if d in holidays), cname)
+                spans.append((b[0], b[-1], bname, len(b)))
+
+    for start, end, name, ndays in spans:
+        if (start, end) in seen_spans:
+            continue
+        seen_spans.add((start, end))
+        for pre in (2, 1, 0):
+            for post in (0, 1, 2, 3):
+                o = start - timedelta(days=pre)
+                r = end + timedelta(days=post)
+                nights = (r - o).days
+                if nights < 1 or nights > max_nights:
+                    continue
+                lv = _workdays_between(o, r, is_off)
+                if len(lv) > max_leave or (o, r) in seen:
+                    continue
+                seen.add((o, r))
+                out_shapes.append({
+                    "holiday": name, "anchor": str(start),
+                    "out": str(o), "ret": str(r), "nights": nights,
+                    "leave_days": len(lv),
+                    "leave": [str(x) for x in lv],
+                    "days_off": ndays,
+                    "label": f"{start:%m%d}·{o:%a}\u2192{r:%a}",
+                    "efficiency": round(nights / max(len(lv), 1), 2),
+                })
+
+    # keep a spread across leave costs, not just the cheapest: the whole point
+    # is to compare "1 day more leave, how much cheaper" later.
+    by_anchor = {}
+    for sh in out_shapes:
+        by_anchor.setdefault(sh["anchor"], []).append(sh)
+    kept = []
+    for anchor, ss in by_anchor.items():
+        per_level = {}
+        for sh in ss:
+            per_level.setdefault(sh["leave_days"], []).append(sh)
+        picked = []
+        for lvl, group in sorted(per_level.items()):
+            group.sort(key=lambda x: -x["nights"])
+            picked.extend(group[:2])
+        picked.sort(key=lambda x: (x["leave_days"], -x["nights"]))
+        kept.extend(picked[:per_holiday])
+    kept.sort(key=lambda x: (x["out"], x["leave_days"]))
+    return kept
+
+
+def shapes(country, year, max_leave=3, per_holiday=6, include_weekends=False):
+    holidays, workdays, conf, src = build(country, year)
+    if not holidays:
+        return [], conf, src
+    return shapes_from(holidays, workdays, year, max_leave, per_holiday,
+                       include_weekends=include_weekends), conf, src
+
+
+# --- bridge table (kept for the CLI) -----------------------------------------
+
+
+def optimise(country, year, max_leave=3):
+    holidays, workdays, conf, src = build(country, year)
+    is_off = make_is_off(holidays, workdays)
+
+    def block_for(anchor, extra):
+        s = set(extra)
+        lo, hi = date(year, 1, 1), date(year, 12, 31)
+        st = anchor
+        while st - timedelta(days=1) >= lo and (
+                is_off(st - timedelta(days=1)) or (st - timedelta(days=1)) in s):
+            st -= timedelta(days=1)
+        en = anchor
+        while en + timedelta(days=1) <= hi and (
+                is_off(en + timedelta(days=1)) or (en + timedelta(days=1)) in s):
+            en += timedelta(days=1)
+        return st, en, (en - st).days + 1
+
     out, seen = [], set()
-    for a in sorted(hol):
-        row = {"holiday": hol[a], "date": str(a), "weekday": a.strftime("%a"),
+    for a in sorted(holidays):
+        row = {"holiday": holidays[a], "date": str(a), "weekday": a.strftime("%a"),
                "options": []}
-        b0 = block_for(year, hol, [], a)
+        b0 = block_for(a, [])
         row["options"].append({"leave_days": 0, "days_off": b0[2],
                                "start": str(b0[0]), "end": str(b0[1]), "leave": []})
-        cand = [a + timedelta(days=k) for k in range(-7, 8)
-                if not is_off(a + timedelta(days=k), hol)]
+        cand = [a + timedelta(days=k) for k in range(-7, 8) if not is_off(a + timedelta(days=k))]
         for k in range(1, max_leave + 1):
             best = None
             for combo in combinations(cand, k):
-                n = block_for(year, hol, combo, a)[2]
+                n = block_for(a, combo)[2]
                 if best is None or n > best[0]:
                     best = (n, combo)
             if not best:
                 continue
-            span = block_for(year, hol, best[1], a)
+            span = block_for(a, best[1])
             row["options"].append({
                 "leave_days": k, "days_off": best[0],
                 "start": str(span[0]), "end": str(span[1]),
                 "leave": [str(x) for x in sorted(best[1])],
-                "efficiency": round(best[0] / k, 2),
-            })
+                "efficiency": round(best[0] / k, 2)})
         sig = tuple((o["leave_days"], o["start"], o["end"]) for o in row["options"][1:])
         if sig in seen:
             continue
         seen.add(sig)
         out.append(row)
-    return out
+    return out, conf, src
 
 
-def windows(country, year, max_leave=3):
-    """Flat list of usable travel windows, ready to feed the scanner."""
-    hol = build(country, year)
-    res = []
-    for r in optimise(year, hol, max_leave):
-        for o in r["options"]:
-            if o["days_off"] < 3:
-                continue
-            res.append({
-                "label": f"{r['date'][5:7]}{r['date'][8:10]}L{o['leave_days']}",
-                "holiday": r["holiday"], "leave_days": o["leave_days"],
-                "days_off": o["days_off"], "start": o["start"], "end": o["end"],
-                "efficiency": o.get("efficiency"),
-            })
-    return res
-
-
-def load_file(path):
-    hol = {}
+def parse_holiday_file(path):
+    """CSV: `date,name` or `date,name,work` for a make-up working day."""
+    holidays, workdays = {}, set()
     for i, line in enumerate(open(path, encoding="utf-8")):
         line = line.strip()
         if not line or line.startswith("#"):
@@ -324,8 +420,13 @@ def load_file(path):
         parts = [p.strip() for p in line.split(",")]
         if i == 0 and not parts[0][:4].isdigit():
             continue
-        hol[date.fromisoformat(parts[0])] = parts[1] if len(parts) > 1 else "holiday"
-    return hol
+        d = date.fromisoformat(parts[0])
+        flags = ",".join(parts[2:]).lower()
+        if "work" in flags:
+            workdays.add(d)
+        else:
+            holidays[d] = parts[1] if len(parts) > 1 else "holiday"
+    return holidays, workdays
 
 
 def main():
@@ -335,40 +436,37 @@ def main():
     ap.add_argument("--file")
     ap.add_argument("--max-leave", type=int, default=3)
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--weekends", action="store_true",
+                    help="also emit ordinary weekends (weekend-warrior mode)")
     a = ap.parse_args()
 
     if a.file:
-        hol, conf, src = load_file(a.file), "user-supplied", a.file
+        hol, work = parse_holiday_file(a.file)
+        conf, src = "user-supplied", a.file
+        shp = shapes_from(hol, work, a.year, a.max_leave,
+                          include_weekends=a.weekends)
     else:
-        hol = build(a.country, a.year)
-        conf, src = CALENDAR_META.get(a.country.upper(), ("unknown", "n/a"))
-    if not hol:
-        raise SystemExit(f"no calendar for {a.country} {a.year}; pass --file")
+        shp, conf, src = shapes(a.country, a.year, a.max_leave,
+                                include_weekends=a.weekends)
 
-    res = optimise(a.year, hol, a.max_leave)
     if a.json:
         print(json.dumps({"country": a.country.upper(), "year": a.year,
-                          "confidence": conf, "source": src, "windows": res},
+                          "confidence": conf, "source": src, "shapes": shp},
                          ensure_ascii=False, indent=2))
         return
 
-    print(f"\n{a.country.upper()} {a.year}   confidence={conf}   source={src}")
+    print(f"\n{a.country.upper()} {a.year}   confidence={conf}   {src}")
     if conf != "official":
         print("  !! verify against the government calendar before booking")
-
-    print("\nnatural long weekends")
-    for b in runs(a.year, hol):
-        if len(b) >= 3:
-            print(f"  {b[0]} ({b[0]:%a}) -> {b[-1]} ({b[-1]:%a})  {len(b)}d")
-
-    print("\nwhat each day of leave buys")
-    for r in res:
-        if r["options"][0]["days_off"] < 2:
-            continue
-        print(f"\n  anchor {r['date']} ({r['weekday']}) {r['holiday']}")
-        for o in r["options"][1:]:
-            print(f"    {o['leave_days']}d leave -> {o['days_off']}d off "
-                  f"({o['start']} .. {o['end']})  eff {o['efficiency']}x")
+    print("\ntrip shapes — pick on price, not habit")
+    cur = None
+    for s in shp:
+        if s["anchor"] != cur:
+            cur = s["anchor"]
+            print(f"\n  {s['holiday']}  ({cur})")
+        lv = ", ".join(s["leave"]) or "none"
+        print(f"    {s['out']} → {s['ret']}  {s['nights']}n  leave {s['leave_days']}d"
+              f" [{lv}]  eff {s['efficiency']}x")
 
 
 if __name__ == "__main__":

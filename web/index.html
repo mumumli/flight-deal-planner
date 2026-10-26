@@ -12,40 +12,39 @@ font:14px/1.55 -apple-system,"Segoe UI",Roboto,"PingFang SC",sans-serif}
 .wrap{max-width:1180px;margin:0 auto;padding:26px 20px 70px}
 h1{font-size:22px;margin:0 0 4px}
 .lead{color:var(--dim);font-size:13px;margin:0 0 22px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;
-padding:16px 18px;margin-bottom:14px}
-.panel h2{font-size:14px;margin:0 0 12px;color:var(--blue);font-weight:600;
-letter-spacing:.02em;text-transform:uppercase}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.panel h2{font-size:13px;margin:0 0 12px;color:var(--blue);font-weight:600;
+letter-spacing:.04em;text-transform:uppercase}
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
 label{display:block;font-size:12px;color:var(--dim);margin-bottom:4px}
 input[type=text],input[type=number],select{background:var(--panel2);border:1px solid var(--line);
 color:var(--fg);border-radius:7px;padding:7px 9px;font-size:13px;font-family:inherit}
-input[type=text]{width:100%}
-select{cursor:pointer}
-button{background:var(--blue);color:#06121f;border:0;border-radius:8px;
-padding:9px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+input[type=text]{width:100%} select{cursor:pointer}
+button{background:var(--blue);color:#06121f;border:0;border-radius:8px;padding:9px 18px;
+font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
 button:disabled{opacity:.45;cursor:default}
 button.ghost{background:transparent;color:var(--dim);border:1px solid var(--line);font-weight:400}
-.wins{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-top:10px}
-.win{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;
-cursor:pointer;font-size:12.5px;user-select:none}
-.win:hover{border-color:#2f3b4b}
-.win.on{border-color:var(--green);background:#12211b}
-.win b{font-size:13px}
-.win .meta{color:var(--dim);font-size:11.5px;margin-top:2px}
-.eff{color:var(--green);font-size:11px}
-.regions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 .chip{background:var(--panel2);border:1px solid var(--line);color:var(--dim);
-border-radius:99px;padding:3px 11px;font-size:12px;cursor:pointer}
-.chip.on{background:#16283a;border-color:#27476b;color:var(--blue)}
+border-radius:99px;padding:3px 11px;font-size:12px;cursor:pointer;user-select:none}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.shapes{margin-top:12px;max-height:430px;overflow:auto}
+.hol{font-size:12px;color:var(--amber);margin:14px 0 6px;font-weight:600}
+.hol:first-child{margin-top:0}
+.srow{display:grid;grid-template-columns:150px 92px 92px 60px;gap:10px;align-items:center;
+background:var(--panel2);border:1px solid var(--line);border-radius:7px;
+padding:6px 10px;margin-bottom:5px;font-size:12.5px;cursor:pointer;user-select:none}
+.srow:hover{border-color:#2f3b4b}
+.srow.on{border-color:var(--green);background:#12211b}
+.srow .dates{font-variant-numeric:tabular-nums}
+.srow .lv{color:var(--green)} .srow .lv.zero{color:var(--dim)}
+.srow .eff{color:var(--dim);font-size:11px}
+.regions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 .dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:6px;
-max-height:290px;overflow:auto;padding:2px}
+max-height:230px;overflow:auto;padding:2px}
 .d{display:flex;gap:7px;align-items:baseline;background:var(--panel2);
 border:1px solid var(--line);border-radius:7px;padding:6px 9px;font-size:12.5px;cursor:pointer}
-.d:hover{border-color:#2f3b4b}
-.d.on{border-color:var(--blue);background:#12202e}
-.d .code{color:var(--dim);font-size:10.5px}
-.d .hrs{color:var(--dim);font-size:10.5px;margin-left:auto}
+.d:hover{border-color:#2f3b4b} .d.on{border-color:var(--blue);background:#12202e}
+.d .code{color:var(--dim);font-size:10.5px} .d .hrs{color:var(--dim);font-size:10.5px;margin-left:auto}
 .hint{color:var(--dim);font-size:12px}
 .bar{height:7px;background:var(--panel2);border-radius:99px;overflow:hidden;margin:10px 0 6px}
 .bar > i{display:block;height:100%;width:0;background:var(--blue);transition:width .3s}
@@ -54,22 +53,33 @@ th,td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-a
 th{color:var(--dim);font-weight:500;font-size:11.5px;text-transform:uppercase;
 letter-spacing:.03em;position:sticky;top:0;background:var(--bg)}
 td.num,th.num{text-align:right;white-space:nowrap}
-.badge{font-size:10.5px;padding:1px 7px;border-radius:99px;border:1px solid var(--line);
-white-space:nowrap}
-.b-red{color:var(--red);border-color:#5c2a2a}
-.b-green{color:var(--green);border-color:#1f5c46}
-.b-amber{color:var(--amber);border-color:#6b5420}
-.b-grey{color:var(--dim)}
-.dim{color:var(--dim)}
-a{color:var(--blue);text-decoration:none}
-a:hover{text-decoration:underline}
-.scroll{max-height:620px;overflow:auto}
+.badge{font-size:10.5px;padding:1px 7px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.b-red{color:var(--red);border-color:#5c2a2a} .b-green{color:var(--green);border-color:#1f5c46}
+.b-amber{color:var(--amber);border-color:#6b5420} .b-grey{color:var(--dim)}
+.dim{color:var(--dim)} a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+.scroll{max-height:640px;overflow:auto}
 .err{color:var(--red);font-size:13px}
+.banner{border:1px solid #5c2a2a;background:#241416;border-radius:10px;padding:12px 14px;
+margin-bottom:14px;font-size:13px;color:#f0b9b9}
+.banner code{background:#3a2224;color:#ffd7d7;padding:2px 6px;border-radius:5px}
+.banner b{color:#fff}
+.banner.ok{border-color:#1f5c46;background:#10221b;color:#a8e6c8}
+.banner.ok code{background:#173a2c;color:#c6f4dd}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;min-height:6px}
+.tag{display:inline-flex;gap:6px;align-items:center;background:var(--panel2);
+border:1px solid var(--line);border-radius:99px;padding:3px 10px;font-size:12px}
+.tag.want{border-color:var(--blue);color:var(--blue)}
+.tag.skip{border-color:#5c2a2a;color:#d98a8a;text-decoration:line-through}
+.tag.auto{border-color:var(--line);color:var(--dim)}
+.tag b{font-weight:600}
+.tag span.x{cursor:pointer;opacity:.6;font-size:14px;line-height:1}
+.tag span.x:hover{opacity:1}
 </style>
 <div class="wrap">
 <h1>flight-deal-planner</h1>
-<p class="lead">Pick a holiday calendar, the windows worth using, and where you'd go.
-It scans live fares and ranks them by cost per night — then you write the reasons.</p>
+<p class="lead">Pick a holiday calendar, see every date pair you could fly, and choose on
+price — not on habit.</p>
+<div id="banner"></div>
 
 <div class="panel">
   <h2>1 · Where from</h2>
@@ -80,50 +90,90 @@ It scans live fares and ranks them by cost per night — then you write the reas
       <option>HKD</option><option>JPY</option><option>AUD</option><option>CNY</option></select></div>
     <div style="width:150px"><label>Holiday calendar</label><select id="country"></select></div>
     <div style="width:90px"><label>Year</label><input id="year" type="number" value="2027" min="2026" max="2030"></div>
-    <div style="width:110px"><label>Max leave days</label><input id="maxleave" type="number" value="3" min="0" max="5"></div>
-    <button class="ghost" id="btnWindows">Load windows</button>
+    <div style="width:110px"><label>Max leave days</label><input id="maxleave" type="number" value="3" min="0" max="6"></div>
+    <button class="ghost" id="btnShapes">Find trip shapes</button>
   </div>
-  <div id="winHint" class="hint" style="margin-top:8px"></div>
-  <div class="regions" style="margin-top:12px">
-    <span class="chip" id="pickBest">best per holiday</span>
-    <span class="chip" id="pickNoLeave">no leave needed</span>
+  <div id="shapeHint" class="hint" style="margin-top:8px"></div>
+  <div class="chips">
+    <span class="chip" id="pickNoLeave">no leave</span>
+    <span class="chip" id="pickOne">≤ 1 day</span>
+    <span class="chip" id="pickBest">best efficiency</span>
     <span class="chip" id="pickNone">clear</span>
+    <label style="display:inline-flex;gap:5px;align-items:center;font-size:12px;color:var(--dim);margin-left:8px">
+      <input type="checkbox" id="weekends"> include ordinary weekends</label>
   </div>
-  <div id="wins" class="wins"></div>
+  <div id="shapes" class="shapes"></div>
 </div>
 
 <div class="panel">
   <h2>2 · Where to</h2>
-  <div class="regions" id="regions"></div>
-  <input id="search" type="text" placeholder="filter airports or countries…" style="margin-bottom:8px">
-  <div id="dgrid" class="dgrid"></div>
-  <div class="hint" style="margin-top:8px"><span id="selCount">0</span> selected ·
-    right-click a destination to mark it <b>visited</b> (excluded from the scan)</div>
+  <p class="hint" style="margin:-4px 0 12px">You don't pick the scan list. You say what you
+    <b>want</b> and what you've <b>done</b>; the rest comes from what's popular from this origin.</p>
+
+  <div class="row" style="align-items:flex-start">
+    <div style="flex:1;min-width:280px">
+      <label>Want to go · 想去（可含“想再去”）</label>
+      <input id="wantIn" type="text" list="apList" placeholder="type a city or code, e.g. Bali / DPS">
+      <div class="tags" id="wantTags"></div>
+    </div>
+    <div style="flex:1;min-width:280px">
+      <label>Already been, skip · 去过不想再去</label>
+      <input id="skipIn" type="text" list="apList" placeholder="e.g. Bangkok / BKK">
+      <div class="tags" id="skipTags"></div>
+    </div>
+  </div>
+  <datalist id="apList"></datalist>
+
+  <div class="chips" style="margin-top:14px">
+    <label style="display:inline-flex;gap:6px;align-items:center;font-size:12.5px;color:var(--fg)">
+      <input type="checkbox" id="usePopular" checked>
+      add popular suggestions I haven't been to</label>
+    <select id="popN" style="padding:4px 8px;font-size:12px">
+      <option value="8">top 8</option><option value="12" selected>top 12</option>
+      <option value="20">top 20</option><option value="30">top 30</option>
+    </select>
+    <select id="popReach" style="padding:4px 8px;font-size:12px">
+      <option value="0" selected>anywhere</option>
+      <option value="5">within 5h</option>
+      <option value="8">within 8h</option>
+    </select>
+    <span class="chip" id="clearAll">reset lists</span>
+  </div>
+
+  <div class="hint" style="margin-top:12px">
+    <b>Will scan <span id="scanCount">0</span> airports</b> —
+    <span id="scanBreakdown"></span></div>
+  <div class="tags" id="planTags" style="margin-top:8px"></div>
 </div>
 
 <div class="panel">
-  <h2>3 · Style</h2>
+  <h2>3 · What you'll accept</h2>
   <div class="row">
-    <div style="width:210px"><label>Airlines</label>
-      <select id="airlines">
-        <option value="">All carriers</option>
-        <option value="TR,SQ" selected>Scoot + Singapore Airlines</option>
-        <option value="TR">Scoot only</option>
-        <option value="SQ">Singapore Airlines only</option>
-        <option value="AK,FD,QZ,TR">AirAsia + Scoot</option>
-      </select></div>
-    <div style="width:170px"><label>Outbound window</label>
-      <select id="outwin">
-        <option value="">Any time</option>
-        <option value="15,23" selected>After 15:00 (evening)</option>
-        <option value="17,23">After 17:00 (after work)</option>
-        <option value="6,12">Morning</option>
-      </select></div>
-    <div style="width:170px"><label>“Book now” horizon</label>
+    <div style="width:180px"><label>Low-cost carriers</label>
+      <select id="carriers"><option value="any" selected>Either way</option>
+        <option value="low_cost">Low-cost only</option>
+        <option value="no_low_cost">No low-cost</option></select></div>
+    <div style="width:170px"><label>Connections</label>
+      <select id="stops"><option value="" selected>Any</option>
+        <option value="0">Nonstop only</option>
+        <option value="1">Up to 1 stop</option></select></div>
+    <div style="width:150px"><label>Max flight time</label>
+      <select id="maxhours"><option value="" selected>Any</option>
+        <option value="4">4 hours</option><option value="6">6 hours</option>
+        <option value="9">9 hours</option></select></div>
+    <div style="width:150px"><label>Red-eye flights</label>
+      <select id="redeye"><option value="" selected>Accept</option>
+        <option value="1">Avoid</option></select></div>
+    <div style="width:160px"><label>Baggage</label>
+      <select id="bag"><option value="" selected>Carry-on only</option>
+        <option value="1">Need checked bag</option></select></div>
+    <div style="width:140px"><label>“Book now” horizon</label>
       <select id="near"><option value="30">30 days</option><option value="64" selected>64 days</option>
         <option value="120">120 days</option></select></div>
     <button id="btnRun" disabled>Scan fares</button>
   </div>
+  <div class="hint" style="margin-top:10px">“Need checked bag” re-ranks on fare + 20kg, which often
+    flips a low-cost fare behind a full-service one.</div>
   <div class="bar" id="bar" style="display:none"><i></i></div>
   <div id="status" class="hint"></div>
 </div>
@@ -133,132 +183,201 @@ It scans live fares and ranks them by cost per night — then you write the reas
 
 <script>
 const $ = s => document.querySelector(s);
-let CATALOG = [], COUNTRIES = [], selected = new Set(), visited = new Set(), windows = [], region = "All";
+let CATALOG = [], COUNTRIES = [], shapes = [];
+const want = new Set(), skip = new Set();
+const BY = {};
 
-async function boot(){
-  const r = await fetch("/api/catalog").then(x=>x.json());
-  CATALOG = r.destinations; COUNTRIES = r.countries;
-  $("#country").innerHTML = COUNTRIES.map(c=>`<option${c==="SG"?" selected":""}>${c}</option>`).join("");
-  const regions = ["All", ...new Set(CATALOG.map(d=>d.region))];
-  $("#regions").innerHTML = regions.map(x=>`<span class="chip${x==="All"?" on":""}" data-r="${x}">${x}</span>`).join("");
-  $("#regions").onclick = e => {
-    const c = e.target.closest(".chip"); if(!c) return;
-    region = c.dataset.r;
-    [...$("#regions").children].forEach(x=>x.classList.toggle("on", x===c));
-    renderDest();
-  };
-  renderDest(); loadWindows();
+const scanSet = () => {
+  const set = new Set(want);
+  if ($("#usePopular").checked) {
+    const n = +$("#popN").value, reach = +$("#popReach").value;
+    CATALOG.filter(d => !skip.has(d.code) && !set.has(d.code)
+                        && (!reach || d.hours <= reach))
+           .slice(0, n).forEach(d => set.add(d.code));
+  }
+  [...skip].forEach(c => set.delete(c));
+  return [...set];
+};
+
+function resolve(text){
+  const q = (text||"").trim().toLowerCase();
+  if(!q) return null;
+  if(BY[q.toUpperCase()]) return q.toUpperCase();
+  const exact = CATALOG.find(d => d.name.toLowerCase() === q);
+  if(exact) return exact.code;
+  const starts = CATALOG.find(d => d.name.toLowerCase().startsWith(q));
+  if(starts) return starts.code;
+  const inc = CATALOG.find(d => (d.name+" "+d.country+" "+d.code).toLowerCase().includes(q));
+  return inc ? inc.code : null;
 }
 
-function renderDest(){
-  const q = ($("#search").value||"").toLowerCase();
-  const list = CATALOG.filter(d =>
-    (region==="All"||d.region===region) &&
-    (!q || (d.code+d.name+d.country).toLowerCase().includes(q)));
-  $("#dgrid").innerHTML = list.map(d=>{
-    const on = selected.has(d.code), vis = visited.has(d.code);
-    return `<div class="d${on?" on":""}" data-c="${d.code}" style="${vis?"opacity:.35":""}">
-      <span>${d.name}</span><span class="code">${d.code}</span><span class="hrs">${d.hours}h</span></div>`;
-  }).join("");
-  [...$("#dgrid").children].forEach(el=>{
-    el.onclick = ()=>{
-      const c = el.dataset.c;
-      if(visited.has(c)){ visited.delete(c); } else {
-        selected.has(c) ? selected.delete(c) : selected.add(c);
-      }
-      renderDest(); refreshRun();
-    };
-    el.oncontextmenu = e => {
-      e.preventDefault(); const c = el.dataset.c;
-      visited.has(c) ? visited.delete(c) : (visited.add(c), selected.delete(c));
-      renderDest(); refreshRun();
+function addTo(kind, code){
+  if(!code) return;
+  (kind === "want" ? want : skip).add(code);
+  (kind === "want" ? skip : want).delete(code);
+  renderTags(); refreshRun();
+}
+
+function renderTags(){
+  $("#wantTags").innerHTML = [...want].map(c=>
+    `<span class="tag want"><b>${BY[c].name}</b><span class="x" data-k="want" data-c="${c}">×</span></span>`).join("");
+  $("#skipTags").innerHTML = [...skip].map(c=>
+    `<span class="tag skip"><b>${BY[c].name}</b><span class="x" data-k="skip" data-c="${c}">×</span></span>`).join("");
+
+  const plan = scanSet();
+  const auto = plan.filter(c => !want.has(c));
+  $("#scanCount").textContent = plan.length;
+  $("#scanBreakdown").innerHTML =
+    `${want.size} wanted` + ($("#usePopular").checked ? ` + ${auto.length} popular` : "")
+    + ` − ${skip.size} skipped`;
+  $("#planTags").innerHTML = plan.map(c=>
+    `<span class="tag ${want.has(c)?"want":"auto"}"><b>${BY[c].name}</b>
+      <span class="dim">${c}</span>
+      <span class="x" data-k="plan" data-c="${c}">×</span></span>`).join("")
+    || `<span class="hint">nothing selected yet</span>`;
+
+  document.querySelectorAll(".tag span.x").forEach(el=>{
+    el.onclick = () => {
+      const c = el.dataset.c, k = el.dataset.k;
+      if(k === "want") want.delete(c);
+      else if(k === "skip") skip.delete(c);
+      else skip.add(c);                 // removing a proposed airport marks it as one to skip
+      renderTags(); refreshRun();
     };
   });
-  $("#selCount").textContent = selected.size;
 }
 
-$("#search").oninput = renderDest;
+async function health(){
+  let h;
+  try { h = await fetch("/api/health").then(x=>x.json()); }
+  catch(e){ $("#banner").innerHTML =
+    `<div class="banner"><b>The API is not answering.</b> Is <code>web/server.py</code> running?<br>
+     Start it with <code>python3 web/server.py</code> and open the URL it prints.</div>`; return; }
+  const bad = [];
+  if(!h.scraper_ready) bad.push(
+    `The fare scraper is not installed, so scans will fail.<br>
+     <code>python3 -m venv .venv &amp;&amp; source .venv/bin/activate</code><br>
+     <code>pip install -r scripts/requirements.txt</code><br>
+     then restart <code>python3 web/server.py</code>.
+     <span class="dim">(${h.scraper_error})</span>`);
+  $("#banner").innerHTML = bad.length
+    ? `<div class="banner">${bad.map(b=>"• "+b).join("<br><br>")}</div>`
+    : `<div class="banner ok">Fare engine ready. This page ranks prices — the reasoning
+       lives in your agent; see README “Where the reasoning lives”.</div>`;
+}
 
-async function loadWindows(){
-  const c = $("#country").value, y = $("#year").value, m = $("#maxleave").value;
-  $("#winHint").textContent = "loading…";
+async function boot(){
+  health();
+  const r = await fetch("/api/catalog").then(x=>x.json());
+  CATALOG = r.destinations; COUNTRIES = r.countries;
+  CATALOG.forEach(d => BY[d.code] = d);
+  $("#country").innerHTML = COUNTRIES.map(c=>`<option${c==="SG"?" selected":""}>${c}</option>`).join("");
+  $("#apList").innerHTML = CATALOG.map(d=>
+    `<option value="${d.name}">${d.code} · ${d.country}</option>`).join("");
+
+  $("#wantIn").onkeydown = e => { if(e.key==="Enter"){ addTo("want", resolve(e.target.value)); e.target.value=""; } };
+  $("#skipIn").onkeydown = e => { if(e.key==="Enter"){ addTo("skip", resolve(e.target.value)); e.target.value=""; } };
+  $("#wantIn").onchange = e => { const c = resolve(e.target.value); if(c){ addTo("want", c); e.target.value=""; } };
+  $("#skipIn").onchange = e => { const c = resolve(e.target.value); if(c){ addTo("skip", c); e.target.value=""; } };
+  $("#usePopular").onchange = ()=>{ renderTags(); refreshRun(); };
+  $("#popN").onchange = ()=>{ renderTags(); refreshRun(); };
+  $("#popReach").onchange = ()=>{ renderTags(); refreshRun(); };
+  $("#clearAll").onclick = ()=>{ want.clear(); skip.clear(); renderTags(); refreshRun(); };
+
+  renderTags(); loadShapes();
+}
+
+async function loadShapes(){
+  const c=$("#country").value, y=$("#year").value, m=$("#maxleave").value;
+  const w=$("#weekends").checked?1:0;
+  $("#shapeHint").textContent = "loading…";
   try{
-    const r = await fetch(`/api/holidays?country=${c}&year=${y}&max_leave=${m}`).then(x=>x.json());
-    if(r.error){ $("#winHint").textContent = r.error; return; }
-    windows = r.windows.filter(w=>w.days_off>=2);
-    $("#winHint").innerHTML = `${r.country} ${r.year} · <b>${r.confidence}</b> · ${r.source}` +
-      (r.confidence!=="official" ? " — <span style='color:var(--amber)'>verify before booking</span>" : "");
-    $("#wins").innerHTML = windows.map((w,i)=>{
-      const eff = w.efficiency ? `<span class="eff">${w.efficiency}×</span>` : `<span class="dim">no leave</span>`;
-      return `<div class="win" data-i="${i}"><b>${w.holiday}</b>
-        <div class="meta">${w.start.slice(5)} → ${w.end.slice(5)} · ${w.days_off}d off
-        · ${w.leave_days}d leave ${eff}</div></div>`;
-    }).join("");
-    [...$("#wins").children].forEach(el=>{
-      el.onclick = ()=>{ el.classList.toggle("on"); refreshRun(); };
-    });
-  }catch(e){ $("#winHint").textContent = "failed: "+e; }
+    const r = await fetch(`/api/shapes?country=${c}&year=${y}&max_leave=${m}&weekends=${w}`).then(x=>x.json());
+    if(r.error){ $("#shapeHint").innerHTML = `<span class="err">${r.error}</span>`; return; }
+    shapes = r.shapes || [];
+    $("#shapeHint").innerHTML = `${r.country} ${r.year} · <b>${r.confidence}</b> · ${r.source}`
+      + (r.confidence!=="official" ? " — <span style='color:var(--amber)'>verify before booking</span>" : "");
+    renderShapes();
+  }catch(e){ $("#shapeHint").innerHTML = `<span class="err">${e}</span>`; }
   refreshRun();
 }
 
-function pickedWindows(){
-  return [...document.querySelectorAll(".win.on")].map(el=>windows[+el.dataset.i]);
+function renderShapes(){
+  let html="", cur=null;
+  shapes.forEach((s,i)=>{
+    if(s.holiday!==cur){ cur=s.holiday; html += `<div class="hol">${s.holiday}</div>`; }
+    const zero = s.leave_days===0;
+    html += `<div class="srow" data-i="${i}">
+      <span class="dates">${s.out.slice(5)} → ${s.ret.slice(5)}</span>
+      <span>${s.nights} nights</span>
+      <span class="lv ${zero?"zero":""}">${zero?"no leave":s.leave_days+"d leave"}</span>
+      <span class="eff">${s.efficiency}×</span></div>`;
+  });
+  $("#shapes").innerHTML = html || `<div class="hint">no shapes — raise the leave allowance</div>`;
+  [...$("#shapes").querySelectorAll(".srow")].forEach(el=>{
+    el.onclick = ()=>{ el.classList.toggle("on"); refreshRun(); };
+  });
 }
+
+function picked(){ return [...document.querySelectorAll(".srow.on")].map(el=>shapes[+el.dataset.i]); }
+function setAll(fn){ [...document.querySelectorAll(".srow")].forEach((el,i)=>el.classList.toggle("on", fn(shapes[i]))); refreshRun(); }
+$("#pickNoLeave").onclick = ()=>setAll(s=>s.leave_days===0);
+$("#pickOne").onclick     = ()=>setAll(s=>s.leave_days<=1);
+$("#pickNone").onclick    = ()=>setAll(()=>false);
+$("#pickBest").onclick    = ()=>{
+  const best={}; shapes.forEach(s=>{ const k=s.anchor;
+    if(!best[k] || s.efficiency>best[k].efficiency) best[k]=s; });
+  const keep=new Set(Object.values(best).map(s=>s.out+s.ret));
+  setAll(s=>keep.has(s.out+s.ret));
+};
+$("#weekends").onchange = loadShapes;
+$("#btnShapes").onclick = loadShapes;
+$("#country").onchange = loadShapes;
+$("#maxleave").onchange = loadShapes;
+$("#year").onchange = loadShapes;
+
 function refreshRun(){
-  const n = selected.size, w = pickedWindows().length;
+  const n = scanSet().length, w = picked().length;
+  const cells = n * w;
   $("#btnRun").disabled = !(n && w);
-  $("#btnRun").textContent = (n && w) ? `Scan ${n} × ${w} = ${n*w} cells` : "Scan fares";
+  $("#btnRun").textContent = (n&&w)
+    ? `Scan ${n} × ${w} = ${cells} cells`
+    : (w ? "add somewhere to go" : "pick some dates");
+  $("#btnRun").title = cells > 120 ? "Large scan — a few minutes" : "";
 }
-
-function setWin(el, on){ el.classList.toggle("on", on); }
-$("#pickBest").onclick = ()=>{
-  const best = {};
-  windows.forEach((w,i)=>{ const k=w.holiday;
-    if(!best[k] || (w.days_off > windows[best[k]].days_off)) best[k]=i; });
-  const keep = new Set(Object.values(best));
-  [...$("#wins").children].forEach((el,i)=>setWin(el, keep.has(i)));
-  refreshRun();
-};
-$("#pickNoLeave").onclick = ()=>{
-  [...$("#wins").children].forEach((el,i)=>setWin(el, windows[i].leave_days===0));
-  refreshRun();
-};
-$("#pickNone").onclick = ()=>{
-  [...$("#wins").children].forEach(el=>setWin(el,false));
-  refreshRun();
-};
-
-$("#btnWindows").onclick = loadWindows;
-$("#country").onchange = loadWindows;
 
 $("#btnRun").onclick = async ()=>{
+  const st = $("#stops").value;
   const spec = {
     origin: $("#origin").value.trim().toUpperCase(),
     currency: $("#currency").value,
-    destinations: [...selected],
-    windows: pickedWindows(),
-    airlines: $("#airlines").value ? $("#airlines").value.split(",") : [],
-    out_window: $("#outwin").value ? $("#outwin").value.split(",").map(Number) : [],
+    destinations: scanSet(),
+    shapes: picked(),
     near_days: +$("#near").value,
-    exclude: [...visited]
+    prefs: {
+      carriers: $("#carriers").value,
+      max_stops: st==="" ? null : +st,
+      max_hours: $("#maxhours").value ? +$("#maxhours").value : null,
+      avoid_red_eye: $("#redeye").value === "1",
+      need_checked_bag: $("#bag").value === "1"
+    }
   };
   $("#btnRun").disabled = true;
   $("#bar").style.display = "block"; $("#bar").firstElementChild.style.width = "2%";
-  $("#status").textContent = "starting…";
-  $("#results").innerHTML = "";
+  $("#status").textContent = "starting…"; $("#results").innerHTML = "";
   let jid;
   try{
-    const r = await fetch("/api/scan", {method:"POST",headers:{"Content-Type":"application/json"},
+    const r = await fetch("/api/scan",{method:"POST",headers:{"Content-Type":"application/json"},
       body: JSON.stringify(spec)}).then(x=>x.json());
-    if(r.error){ $("#status").innerHTML = `<span class="err">${r.error}</span>`; $("#btnRun").disabled=false; return; }
+    if(r.error){ $("#status").innerHTML=`<span class="err">${r.error}</span>`; $("#btnRun").disabled=false; return; }
     jid = r.job_id;
-  }catch(e){ $("#status").innerHTML = `<span class="err">${e}</span>`; $("#btnRun").disabled=false; return; }
+  }catch(e){ $("#status").innerHTML=`<span class="err">${e}</span>`; $("#btnRun").disabled=false; return; }
   poll(jid);
 };
 
 async function poll(jid){
   const r = await fetch("/api/job?id="+jid).then(x=>x.json());
-  if(r.error){ $("#status").innerHTML = `<span class="err">${r.error}</span>`; $("#btnRun").disabled=false; return; }
+  if(r.error){ $("#status").innerHTML=`<span class="err">${r.error}</span>`; $("#btnRun").disabled=false; return; }
   const pct = r.total ? Math.round(100*r.done/r.total) : 0;
   $("#bar").firstElementChild.style.width = Math.max(2,pct)+"%";
   $("#status").textContent = r.phase==="scanning"
@@ -276,13 +395,14 @@ function render(items){
   const rows = items.filter(i=>i.priority!=="skip");
   if(!rows.length){ $("#results").innerHTML = `<div class="panel"><p class="hint">No priced results.</p></div>`; return; }
   rows.sort((a,b)=>a.per_night-b.per_night);
-  const body = rows.slice(0,120).map(i=>{
+  const body = rows.slice(0,150).map(i=>{
     const b=i.bag, bag = b.add20 ? `${b.cabin}; +${b.add20}` : `${b.cabin}; ${b.checked}`;
     const pct = i.rank==null ? '<span class="dim">n/a</span>'
       : `${i.rank}/${i.n_windows} <span class="dim">(${i.vs_median>0?'+':''}${i.vs_median}%)</span>`;
     return `<tr>
       <td><b>${i.name}</b> <span class="dim">${i.dest}</span></td>
-      <td>${i.kind}<br><span class="dim">${i.out.slice(5)} → ${i.ret.slice(5)} · ${i.nights}n</span></td>
+      <td>${i.out.slice(5)} → ${i.ret.slice(5)}<br><span class="dim">${i.nights}n</span></td>
+      <td>${i.leave_days===0?'<span class="dim">none</span>':`<b>${i.leave_days}d</b>`}</td>
       <td>${i.air}<br><span class="dim">${i.dep}→${i.arr}${i.plus?" +1":""} · ${i.dur}</span></td>
       <td class="num"><b>${i.price}</b><br><span class="dim">${bag}</span></td>
       <td class="num">${i.price_with_bag}<br><span class="dim">${i.per_night}/night</span></td>
@@ -291,12 +411,55 @@ function render(items){
         ${i.confidence==="low"?'<br><span class="dim" style="font-size:10px">thin sample</span>':''}</td>
       <td><a href="${i.url}" target="_blank" rel="noopener">check</a></td></tr>`;
   }).join("");
-  $("#results").innerHTML = `<div class="panel"><h2>Results — $ ${rows.length} priced cells, cheapest first by cost per night</h2>
-    <div class="scroll"><table><thead><tr><th>Destination</th><th>Window</th><th>Flight</th>
-    <th class="num">Fare</th><th class="num">+bag / night</th><th class="num">Route percentile</th>
-    <th>Signal</th><th></th></tr></thead><tbody>${body}</tbody></table></div>
-    <p class="hint" style="margin-top:10px">Prices are snapshots without checked baggage. Re-check on the airline site
-    before booking. “Route percentile” is relative to the windows you just scanned, not historical.</p></div>`;
+
+  $("#results").innerHTML = `<div class="panel">
+    <h2>Results — ${rows.length} priced options, cheapest per night first</h2>
+    <div class="scroll"><table><thead><tr><th>Destination</th><th>Dates</th><th>Leave</th>
+    <th>Flight</th><th class="num">Fare</th><th class="num">+bag / night</th>
+    <th class="num">Route pct</th><th>Signal</th><th></th></tr></thead><tbody>${body}</tbody></table></div>
+    <p class="hint" style="margin-top:10px">Prices are snapshots without checked baggage. Re-check on the
+    airline site before booking. “Route pct” is relative to the shapes you just scanned, not historical.</p>
+    </div>` + tradeoff(rows);
+
+}
+
+// The point of the whole exercise: what does one more day of leave cost — or save?
+function tradeoff(rows){
+  const by = {};
+  rows.forEach(i=>{
+    const k = i.dest + "|" + i.holiday;
+    (by[k] = by[k] || {name:i.name, holiday:i.holiday, lv:{}});
+    const cur = by[k].lv[i.leave_days];
+    if(!cur || i.price < cur.price) by[k].lv[i.leave_days] = i;
+  });
+  const keys = Object.keys(by).filter(k=>Object.keys(by[k].lv).length>1);
+  if(!keys.length) return "";
+  const maxLv = Math.max(...keys.map(k=>Math.max(...Object.keys(by[k].lv).map(Number))));
+  const head = Array.from({length:maxLv+1},(_,i)=>
+    `<th class="num">${i===0?"no leave":i+"d leave"}</th>`).join("");
+  const trs = keys.slice(0,40).map(k=>{
+    const g = by[k];
+    const cells = [];
+    let prev = null;
+    for(let l=0; l<=maxLv; l++){
+      const it = g.lv[l];
+      if(!it){ cells.push(`<td class="num dim">—</td>`); continue; }
+      let note = "";
+      if(prev !== null){
+        const d = it.price - prev.price;
+        note = d < 0 ? `<br><span style="color:var(--green)">${d}</span>`
+                     : `<br><span class="dim">+${d}</span>`;
+      }
+      cells.push(`<td class="num">${it.price}${note}</td>`);
+      prev = it;
+    }
+    return `<tr><td><b>${g.name}</b> <span class="dim">${g.holiday}</span></td>${cells.join("")}</tr>`;
+  }).join("");
+  return `<div class="panel"><h2>Leave trade-off — same destination, priced at each leave cost</h2>
+    <p class="hint">A green number means taking <b>more</b> leave is cheaper; that is the flight
+    telling you which day to book off.</p>
+    <div class="scroll"><table><thead><tr><th>Destination</th>${head}</tr></thead>
+    <tbody>${trs}</tbody></table></div></div>`;
 }
 
 boot();

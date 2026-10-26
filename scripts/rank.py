@@ -30,10 +30,18 @@ Usage
 """
 import argparse
 import json
+import os
+import sys
 import re
 import statistics as st
 from datetime import date, datetime
 from collections import Counter
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    import carriers as _car
+except Exception:  # noqa: BLE001
+    _car = None
 
 DEFAULT_BAG = {"tier": "unknown", "cabin": "not confirmed", "checked": "verify", "add20": 35}
 
@@ -83,6 +91,7 @@ def choose(rows, scope, dur_cap=None):
 
 def rank(fares_path, cfg):
     """Score a fares JSONL against a config dict. Returns (items, stats)."""
+    """Score a fares JSONL against a config dict. Returns (items, stats)."""
     meta = cfg["destinations"]
     bags = cfg.get("baggage", {})
     long_windows = set(cfg.get("long_windows", []))
@@ -114,6 +123,7 @@ def rank(fares_path, cfg):
             "arr": pick["arr"], "plus": pick["plus"], "stops": pick["stops"],
             "dur": pick["dur"], "red_eye": bool(pick["plus"]),
             "hour": h, "url": r.get("url", ""), "n_rows": r["n"],
+            "leave_days": r.get("leave_days"), "holiday": r.get("holiday") or r.get("kind", ""),
         })
 
     by_route = {}
@@ -134,8 +144,34 @@ def rank(fares_path, cfg):
                 c["rank"] = 1 + sum(1 for p in base if p < c["price"])
                 c["vs_median"] = round((c["price"] / stats[dst]["median"] - 1) * 100)
 
+    prefs = cfg.get("prefs", {})
+    max_hours = prefs.get("max_hours")
+    avoid_red_eye = bool(prefs.get("avoid_red_eye"))
+    need_bag = bool(prefs.get("need_checked_bag"))
+    carrier_pref = prefs.get("carriers", "any")
+    max_stops = prefs.get("max_stops")
+
+    def allowed(c):
+        if max_hours and c["scope"] == "short" and c["hours"] and c["hours"] > max_hours:
+            return False
+        if avoid_red_eye and c["red_eye"]:
+            return False
+        if max_stops is not None and c["stops"] == "1 stop" and max_stops == 0:
+            return False
+        if max_stops is not None and c["stops"] not in ("0", "1 stop") and max_stops <= 1:
+            return False
+        if carrier_pref != "any" and _car is not None:
+            kind = _car.classify_name(c["air"])
+            if carrier_pref == "low_cost" and kind == "full-service":
+                return False
+            if carrier_pref == "no_low_cost" and kind == "low-cost":
+                return False
+        return True
+
     items = []
     for c in cells:
+        if not allowed(c):
+            continue
         b = dict(bags.get(c["air"], DEFAULT_BAG))
         excluded = c["dest"] in exclude_d or c["label"] in exclude_w
         total = c["price"] + b.get("add20", 0)
@@ -157,9 +193,10 @@ def rank(fares_path, cfg):
             **{k: c[k] for k in ("dest", "name", "country", "visa", "hours", "scope",
                                  "label", "kind", "out", "ret", "nights", "days_out",
                                  "price", "air", "dep", "arr", "plus", "stops",
-                                 "dur", "red_eye", "url")},
+                                 "dur", "red_eye", "url", "leave_days", "holiday")},
             "bag": b, "price_with_bag": total,
-            "per_night": round(total / max(c["nights"], 1)),
+            "basis": total if need_bag else c["price"],
+            "per_night": round((total if need_bag else c["price"]) / max(c["nights"], 1)),
             "rank": c["rank"], "n_windows": stats[c["dest"]]["n"],
             "median": stats[c["dest"]]["median"], "vs_median": v,
             "priority": pri, "n_rows": c["n_rows"],

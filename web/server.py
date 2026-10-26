@@ -14,6 +14,8 @@ import os
 import sys
 import threading
 import time
+import urllib.error
+import urllib.request
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
@@ -24,6 +26,7 @@ sys.path.insert(0, os.path.join(ROOT, "scripts"))
 
 import gf            # noqa: E402
 import holidays as holiday_mod   # noqa: E402
+import carriers as carrier_mod   # noqa: E402
 import rank as rank_mod          # noqa: E402
 import scan as scan_mod          # noqa: E402
 
@@ -37,6 +40,14 @@ DEST_BY_CODE = {d["code"]: d for d in DEST_CATALOG}
 
 JOBS = {}
 JOBS_LOCK = threading.Lock()
+
+# --- dependency probe --------------------------------------------------------
+def scraper_ready():
+    try:
+        import fast_flights  # noqa: F401
+        return True, None
+    except Exception as e:  # noqa: BLE001
+        return False, f"{type(e).__name__}: {e}"
 
 
 def default_baggage():
@@ -66,6 +77,7 @@ def default_baggage():
 
 def run_job(job_id, spec, cfg):
     job = JOBS[job_id]
+    os.makedirs(DATA_DIR, exist_ok=True)   # the dir can be cleaned away under us
     fares = os.path.join(DATA_DIR, f"fares_{job_id}.jsonl")
     if os.path.exists(fares):
         os.remove(fares)
@@ -93,6 +105,11 @@ def run_job(job_id, spec, cfg):
         job["items"] = items
         job["stats"] = stats
         job["phase"] = "done"
+    except ModuleNotFoundError as e:  # noqa: BLE001
+        job["phase"] = "error"
+        job["error"] = (f"{e}. The fare scraper is not installed. Run:\n"
+                        "  python3 -m venv .venv && source .venv/bin/activate\n"
+                        "  pip install -r scripts/requirements.txt")
     except Exception as e:  # noqa: BLE001
         job["phase"] = "error"
         job["error"] = str(e)
@@ -101,6 +118,13 @@ def run_job(job_id, spec, cfg):
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
+
+    def send_error(self, code, message=None, explain=None):
+        # keep malformed requests to a clean status line, not a traceback dump
+        try:
+            self._send({"error": message or "bad request"}, code)
+        except Exception:  # noqa: BLE001
+            pass
 
     def _send(self, obj, status=200, ctype="application/json"):
         body = obj if isinstance(obj, bytes) else json.dumps(obj, ensure_ascii=False).encode()
@@ -116,19 +140,25 @@ class Handler(BaseHTTPRequestHandler):
 
         if u.path in ("/", "/index.html"):
             return self._file("index.html", "text/html")
+        if u.path == "/api/health":
+            ok, err = scraper_ready()
+            return self._send({"scraper_ready": ok, "scraper_error": err,
+                               "python": sys.version.split()[0]})
         if u.path == "/api/catalog":
             return self._send({"destinations": DEST_CATALOG,
-                               "countries": sorted(holiday_mod.CALENDAR_META)})
-        if u.path == "/api/holidays":
+                               "countries": sorted(holiday_mod.CALENDARS)})
+        if u.path in ("/api/shapes", "/api/holidays"):
             country = (q.get("country", ["SG"])[0]).upper()
             year = int(q.get("year", ["2027"])[0])
+            weekends = q.get("weekends", ["0"])[0] in ("1", "true", "yes")
             try:
-                wins = holiday_mod.windows(country, year, int(q.get("max_leave", ["3"])[0]))
+                shp, conf, src = holiday_mod.shapes(
+                    country, year, int(q.get("max_leave", ["3"])[0]),
+                    include_weekends=weekends)
             except Exception as e:  # noqa: BLE001
                 return self._send({"error": str(e)}, 400)
-            conf, src = holiday_mod.CALENDAR_META.get(country, ("unknown", "n/a"))
             return self._send({"country": country, "year": year, "confidence": conf,
-                               "source": src, "windows": wins})
+                               "source": src, "shapes": shp})
         if u.path == "/api/job":
             jid = q.get("id", [""])[0]
             job = JOBS.get(jid)
@@ -136,6 +166,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send({"error": "unknown job"}, 404)
             out = {k: job.get(k) for k in
                    ("phase", "done", "total", "error", "best_seen")}
+            out["brief"] = job.get("brief")
             if job.get("phase") in ("done", "error"):
                 out["items"] = job.get("items")
                 out["stats"] = job.get("stats")
@@ -162,16 +193,22 @@ class Handler(BaseHTTPRequestHandler):
         origin = (body.get("origin") or "SIN").upper()
         cur = body.get("currency") or "SGD"
         codes = [c for c in body.get("destinations", []) if c in DEST_BY_CODE]
-        wins = body.get("windows", [])
+        wins = body.get("shapes") or body.get("windows") or []
+        prefs = body.get("prefs") or {}
         if not codes or not wins:
             return self._send({"error": "pick at least one destination and one window"}, 400)
 
+        windows = [{"label": w["label"], "out": w["out"], "ret": w["ret"],
+                    "nights": w.get("nights"), "leave_days": w.get("leave_days"),
+                    "holiday": w.get("holiday", ""),
+                    "kind": f"{w.get('holiday', '')} · {w.get('nights', 0)}n · "
+                            f"{w.get('leave_days', 0)}d leave"}
+                   for w in wins]
         spec = {
             "origin": origin, "currency": cur, "destinations": codes,
-            "windows": [{"label": w["label"], "out": w["start"], "ret": w["end"],
-                         "kind": f"{w.get('holiday', '')} (+{w.get('leave_days', 0)}d leave)"}
-                        for w in wins],
-            "airlines": body.get("airlines") or None,
+            "windows": windows,
+            "airlines": carrier_mod.airline_filter(prefs.get("carriers", "any")),
+            "max_stops": prefs.get("max_stops"),
             "out_window": body.get("out_window") or None,
             "workers": 5,
         }
@@ -180,7 +217,8 @@ class Handler(BaseHTTPRequestHandler):
         cfg = {
             "home": origin, "currency": cur, "today": time.strftime("%Y-%m-%d"),
             "near_days": int(body.get("near_days", 64)),
-            "long_windows": [w["label"] for w in wins if int(w.get("days_off", 0)) >= 5],
+            "prefs": prefs,
+            "long_windows": [w["label"] for w in wins if int(w.get("nights", 0)) >= 5],
             "destinations": {
                 c: {"name": DEST_BY_CODE[c]["name"],
                     "country": DEST_BY_CODE[c]["country"],
@@ -193,9 +231,13 @@ class Handler(BaseHTTPRequestHandler):
         }
 
         jid = uuid.uuid4().hex[:12]
+        brief = {"origin": origin, "currency": cur, "destinations": codes,
+                 "windows": len(windows), "prefs": prefs,
+                 "scan_date": time.strftime("%Y-%m-%d")}
         with JOBS_LOCK:
             JOBS[jid] = {"phase": "scanning", "done": 0, "total": len(codes) * len(wins),
-                         "items": None, "stats": None, "error": None, "best_seen": None}
+                         "items": None, "stats": None, "error": None, "best_seen": None,
+                         "brief": brief}
         threading.Thread(target=run_job, args=(jid, spec, cfg), daemon=True).start()
         return self._send({"job_id": jid})
 

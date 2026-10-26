@@ -16,6 +16,8 @@ Job spec
     {"label": "MAY",  "out": "2027-05-14", "ret": "2027-05-23", "kind": "9-day bridge"}
   ],
   "airlines": ["TR", "SQ"],          // optional; omit to scan every carrier
+  "max_stops": 1,                    // optional; 0 = nonstop only
+  "max_duration_minutes": 480,       // optional; total travel time cap
   "out_window": [15, 23],            // optional; departure-hour filter, outbound
   "ret_window": [0, 8],              // optional; departure-hour filter, return
   "workers": 5,
@@ -46,6 +48,10 @@ def build(cfg, dest, win):
     kw = {}
     if cfg.get("airlines"):
         kw["airlines"] = cfg["airlines"]
+    if cfg.get("max_stops") is not None:
+        kw["max_stops"] = cfg["max_stops"]
+    if cfg.get("max_duration_minutes"):
+        kw["max_duration_minutes"] = cfg["max_duration_minutes"]
     if cfg.get("out_window"):
         kw["earliest_departure_hour"], kw["latest_departure_hour"] = cfg["out_window"]
     legs = [FlightQuery(date=win["out"], from_airport=cfg["origin"],
@@ -55,6 +61,8 @@ def build(cfg, dest, win):
         kw2 = {}
         if cfg.get("airlines"):
             kw2["airlines"] = cfg["airlines"]
+        if cfg.get("max_stops") is not None:
+            kw2["max_stops"] = cfg["max_stops"]
         if cfg.get("ret_window"):
             kw2["earliest_departure_hour"], kw2["latest_departure_hour"] = cfg["ret_window"]
         legs.append(FlightQuery(date=win["ret"], from_airport=dest,
@@ -83,6 +91,8 @@ def work(cfg, dest, win, force=False):
     return {"origin": cfg["origin"], "to": dest, "label": win["label"],
             "kind": win.get("kind", ""), "out": win["out"], "ret": win.get("ret"),
             "url": url, "n": len(rows), "rows": rows,
+            "leave_days": win.get("leave_days"), "holiday": win.get("holiday"),
+            "nights": win.get("nights"),
             "ts": time.strftime("%Y-%m-%dT%H:%M:%S")}
 
 

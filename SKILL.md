@@ -25,8 +25,14 @@ python3 web/server.py        # → http://127.0.0.1:8765
 ```
 
 The page collects everything in §1 as a form: origin, holiday calendar, year,
-leave allowance, the windows worth using, the airports under consideration, and
-the style flags. It runs the same scanner and ranker and returns a ranked table.
+leave allowance, the trip shapes worth using, the destinations under
+consideration, and the capability flags. It runs the same scanner and ranker and
+returns a ranked table.
+
+**The page has no LLM in it, on purpose.** It is a fare calculator: it answers
+"what does it cost", never "where should I go". Steps §5–§7 below — season fit,
+the recommendation, the what-to-do — are yours to execute, not the page's. If a
+user asks why the web UI does not explain its picks, that is the answer.
 
 Use it when a human is present and wants to drive. Use the CLI path below when
 you are the one doing the planning, or when the answer has to be reproducible.
@@ -49,15 +55,20 @@ Ask for these; if the user has already volunteered them, do not re-ask.
 
 Travel-style flags that change the plan:
 
+Ask about **capability, not brand** — "do you accept low-cost carriers" is a
+preference a traveller actually holds; "do you like Scoot" is not:
+
+- **Low-cost carriers** — yes / no / either way. Low-cost fares are unbundled
+  (cabin bag only); full-service fares include 20–30kg. This is the single most
+  useful filter and the one that changes the ranking most often.
+- **Connections** — nonstop only, up to one stop, or any. Applies server-side.
+- **Total travel time** — a cap in hours; a 20-hour connection is not a bargain.
 - **Red-eye tolerance** — if low, exclude departures between 23:00–05:00 and
-  returns arriving after midnight; if high, the cheapest fare is usually a
-  red-eye and gets a bonus rather than a penalty.
-- **Checked bag** — if the user travels carry-on only, sort by bare fare and
-  always show the "+bag" column so the reversal is visible. If they need a
-  bag, a full-service fare often beats a low-cost fare + bag.
+  returns arriving after midnight.
+- **Checked bag** — if they need one, rank on fare + 20kg; the reversal against
+  a full-service fare is common and should be visible, not hidden.
 - **Weekend warrior vs holiday-only** — decides whether ordinary weekends enter
-  the scan at all. Weekend warriors need short sectors (≤4h); holiday-only
-  travellers can be sent far.
+  the scan at all. Weekend warriors need short sectors (≤4h).
 - **Leave allowance** (days/year) — caps how many bridges you may propose.
 
 Write the profile to `assets/traveller.yaml` so re-runs are cheap.
@@ -73,7 +84,14 @@ python3 scripts/holidays.py --file my-country.csv --year 2027   # other countrie
 
 Bundled: `SG`, `HK`, `JP`, `AU`, `US`, `CN`, `KR`, `MY`. Each carries a
 confidence label — `official`, `rule-based`, or `fixed-dates-only` — and the
-command prints it. Only `SG` and `HK` are official; `CN`/`KR`/`MY` omit lunar
+command prints it.
+
+**Substitute days are rules, not data.** `SG` applies "a Sunday holiday moves to
+Monday, a Saturday holiday does not"; `US` shifts Saturday back to Friday; `CN`
+has no automatic substitute because 调休 is announced separately — it is supplied
+as *make-up workdays* (weekends that become working days). Do not paste a
+pre-substituted list and call it a rule: the two disagree the moment the
+calendar year changes. Only `SG` and `HK` are official; `CN`/`KR`/`MY` omit lunar
 festivals, so a Chinese New Year or Chuseok plan needs `--file` with the
 government's published dates. Never let a `fixed-dates-only` calendar silently
 stand in for a full one.
@@ -94,8 +112,20 @@ Rules:
 - Long windows (>5 nights) are where far destinations become rational, because
   the fixed cost of the flight amortises.
 
-Output of this step: a table of **windows**, each with `label`, `out` date,
-`ret` date, nights, and leave cost.
+Output of this step: a list of **trip shapes** — `(out, ret)` date pairs, each
+with its nights and its true leave cost. For one holiday you will typically get
+the same trip at 0, 1 and 2 days of leave; that spread is the point, because the
+fare usually differs between them and you cannot know which is cheapest until
+you price all three.
+
+Two rules that make or break this step:
+
+- **Cluster nearby holidays.** Singapore's May 2027 has Hari Raya Haji on a
+  Monday and Vesak on the Thursday — three working days apart. Priced as two
+  separate windows you get a 4-night trip; priced as one cluster, 3 days of
+  leave buys 8 nights. Enumerating per holiday never finds it.
+- **Keep the short shapes too.** Clustering must not swallow "just the Monday
+  off" — a 2-night trip at zero leave is often the fare winner for a destination
 
 ---
 
@@ -106,7 +136,11 @@ Three buckets, all scanned:
 1. **Must-go** — from the user's list, regardless of price.
 2. **Revisit** — places they liked; treat "cheap + right season" as a strong
    signal, and say so in the reason.
-3. **Explore** — never visited.
+3. **Explore** — never visited, ranked by how popular the destination is *from this
+   origin* (proximity + tourist draw), then capped. The traveller should not have
+   to enumerate a scan list; they describe taste and constraints, and the
+   catalogue fills in the rest. Show the proposed set before scanning so nothing
+   is spent on destinations they would refuse.
 
 Scope each destination honestly:
 

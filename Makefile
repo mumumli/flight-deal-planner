@@ -1,14 +1,19 @@
-.PHONY: help web holidays demo install clean
+.PHONY: help install doctor web holidays demo clean
 
 help:
-	@echo "make install    install scraper dependencies"
+	@echo "make install    create .venv and install scraper dependencies"
+	@echo "make doctor     check this install can actually scan and advise"
 	@echo "make web        open the local web UI at http://127.0.0.1:8765"
-	@echo "make holidays   show 2027 windows for Singapore"
+	@echo "make holidays   show 2027 trip shapes for Singapore"
 	@echo "make demo       run the bundled example end to end"
 	@echo "make clean      remove generated data"
 
 install:
-	pip install -r scripts/requirements.txt
+	python3 -m venv .venv && . .venv/bin/activate && pip install -r scripts/requirements.txt
+	@echo "now: source .venv/bin/activate  (before make web / make doctor)"
+
+doctor:
+	python3 scripts/selfcheck.py
 
 web:
 	python3 web/server.py

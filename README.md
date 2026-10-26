@@ -40,11 +40,14 @@ holiday calendar → windows → fare scan → season + visa filter → plan
 
 | | Capability 能力 | 说明 |
 |---|---|---|
-| 🗓 | Computes what 1, 2 or 3 days of leave actually buy, anchored on each holiday, with a leave-efficiency ratio | 算出请 1 / 2 / 3 天年假分别能换几天连休，**锚定在该假期上**，并给出效率倍数 |
+| 🗓 | Applies the country's substitute-day rule — a Sunday holiday moves to Monday, a Saturday one does not · 按各国补假规则推导，周日假补周一、周六假不补 |
+| 🔀 | Enumerates every flyable **date pair** around each holiday, not one fixed window · 围绕每个假期枚举所有可行的**出发/返回组合**，而不是先定死一个窗口 |
+| 💸 | Prices each shape, then reports **what one more day of leave costs — or saves** · 给每种组合报价，再算出「多请一天假是更贵还是更便宜」 |
 | ✈️ | Scans live Google Flights fares — real prices, not estimates | 扫 Google Flights 的实时票价，不是估算 |
 | 🌦 | Treats season as a **filter**, not a tiebreak: never recommends rain because it is cheap | 把季节当**过滤器**而非加分项：不因为便宜就推荐雨季 |
 | ⚖️ | Ranks by cost per night, so a 9-day bridge isn't compared to a 2-night weekend | 按「每晚成本」排序，不会拿 9 天窗口跟 2 晚周末直接比 |
 | 🧳 | Annotates baggage on every price — carry-on vs suitcase often reverses the ranking | 每个价格都标注行李：裸票和含托运经常把排名反过来 |
+| 🎯 | Suggests destinations instead of asking you to pick: a wishlist, a skip-list, and a popularity-ranked discovery pool | 不让你挑目的地：给一个想去清单、一个跳过清单，其余按热门度自动补 |
 
 **It does not · 它不做什么**
 
@@ -62,23 +65,28 @@ holiday calendar → windows → fare scan → season + visa filter → plan
 ```bash
 git clone https://github.com/mumumli/flight-deal-planner.git
 cd flight-deal-planner
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r scripts/requirements.txt
+make doctor                    # ← run this first; it tells you what is missing
 python3 web/server.py          # → http://127.0.0.1:8765
 ```
 
-Pick origin, holiday calendar and year, tick the windows worth using, tick the
-airports you'd consider, press **Scan**. You get a ranked table: fare, baggage
-state, fare with a 20kg bag, cost per night, and how the date compares to the
-other windows scanned. Right-click an airport to mark it *visited* so it stops
-being suggested.
+> ⚠️ **The venv is not optional on most machines.** Modern Python refuses a
+> system-wide `pip install` ("externally-managed-environment"), and if you skip
+> the install the page still loads but every scan fails. `make doctor` catches
+> exactly that:
 
-> 选出发地、假期日历和年份，勾上值得用的窗口，再勾上你愿意去的机场，点 **Scan**。
-> 会返回一张排序表：裸票价、行李状态、加 20kg 后的价格、每晚成本，以及该日期相对
-> 本次其它窗口的位置。**右键机场**可标记「去过」，之后不再推荐。
+```text
+  [OK  ] python >= 3.9 — 3.11.5
+  [FAIL] fast-flights installed — pip install -r scripts/requirements.txt
+  [FAIL] primm installed — pulled in by fast-flights
+  [OK  ] network to google.com — HTTP 200
+  [OK  ] port 8765 — free
+```
 
-Stdlib only — nothing to install beyond the two scraper dependencies.
-
-> 后端只用 Python 标准库，除两个抓取依赖外无需安装任何东西。
+> ⚠️ **虚拟环境基本是必须的。** 新版 Python 不允许系统级 `pip install`
+> （会报 externally-managed-environment）；跳过安装的话页面能打开，但每次扫价都会失败。
+> `make doctor` 就是用来提前发现这个的。
 
 ### 2 · As an agent skill · 作为 agent skill 使用
 
@@ -99,6 +107,63 @@ python3 scripts/report.py --summary data/summary.json --out report.md
 ```
 
 ---
+
+## Where the reasoning lives · 推荐理由从哪来
+
+**The web UI only prices. The judging is done by an agent.** That split is
+deliberate: the page stays a calculator with no API key, no vendor lock-in and no
+prompt to maintain; the reasoning lives in [`SKILL.md`](SKILL.md), which any
+agent can execute.
+
+> **网页只负责查价，判断交给 agent。** 这个分工是刻意的：页面保持成一个不需要 API key、
+> 不绑定厂商、不用维护提示词的查价器；「该去哪、为什么」写在
+> [`SKILL.md`](SKILL.md) 里，任何 agent 都能按它执行。
+
+| | The web UI · 网页 | An agent · Agent |
+|:---|:---|:---|
+| Answers 回答 | *what does it cost* | *where should I go, and why* |
+| Does 做 | fetch fares, rank them, show the leave trade-off | read the ranked JSON + seasonality + visa rules, write the plan |
+| Needs 需要 | the repo and the scraper | an LLM plus this folder as a skill |
+| Output 输出 | tables and a link per row | one block per holiday: go / fly / fare / why / do |
+
+### Getting the reasons · 怎么拿到「为什么」
+
+**Route A — use it as an agent skill (recommended).** Drop the folder into your
+agent's skills directory and ask it to plan the year. The agent reads
+[`SKILL.md`](SKILL.md), calls the same scripts, and writes the narrative — no key
+to configure here.
+
+> **路线 A：当 agent skill 用（推荐）。** 把目录放进 agent 的 skills 目录，让它规划这一年。
+> agent 自己读 [`SKILL.md`](SKILL.md)、调同一批脚本、写推荐理由——这个仓库里不需要配任何 key。
+
+**Route B — point your own agent at the JSON.** While the page is scanning, the
+server keeps the result in memory; `GET /api/job?id=<job_id>` returns
+`items` (every priced option) plus `brief` (origin, constraints, scan date). Feed
+that to your model together with `references/seasonality.md` and the output
+contract in `SKILL.md` §7 and it will produce the same plan.
+
+> **路线 B：把自己的 agent 指向 JSON。** 扫描期间结果在服务端内存里，
+> `GET /api/job?id=<job_id>` 返回 `items`（全部报价）和 `brief`（出发地、约束、抓取日期）。
+> 把它连同 `references/seasonality.md` 和 `SKILL.md` 第 7 节的输出契约一起给模型即可。
+
+**Route C — no agent at all.** `scripts/report.py` renders the factual skeleton to
+Markdown, with a `_fill in by hand_` marker where the judgement goes. Useful when
+you just want the numbers in a document.
+
+> **路线 C：完全不用 agent。** `scripts/report.py` 输出事实骨架，需要判断的地方留了
+> `_fill in by hand_`。只想要一份带数字的文档时用这个。
+
+### What the page deliberately does not do · 页面刻意不做的事
+
+- No LLM call, no `LLM_API_KEY`, no prompt to keep in sync.
+- No "recommended for you" badge — ranking is transparent (cost per night, then
+  route percentile), and the page shows you the columns so you can disagree.
+- No claim that a price is the historical low, or that a destination is right for
+  you. Those are judgements, and they belong to the agent's step, not the parser.
+
+> 不调用大模型、不要求 key、不用同步提示词；不打「为你推荐」的标签——排序规则完全透明
+> （先按每晚成本，再按航线分位），列全给你，你可以不同意；也不声称「历史低位」或
+> 「适合你」，那些是判断，属于 agent 那一步。
 
 ## What it produces · 输出长什么样
 
@@ -147,7 +212,7 @@ example sits in [`examples/example-report.md`](examples/example-report.md).
 | `JP` | Japan, any year · 日本 | rule-based 规则推算 — equinox ±1 day 春秋分 ±1 天 |
 | `AU` | Australia, any year · 澳洲 | rule-based — national only 仅全国假日 |
 | `US` | United States, any year · 美国 | rule-based — federal only 仅联邦假日 |
-| `CN` | Mainland China · 中国内地 | fixed dates only 仅固定日期 — **no lunar festivals 不含农历节** |
+| `CN` | Mainland China · 中国内地 | fixed dates only 仅固定日期 — **no lunar festivals 不含农历节**; 调休 supplied as make-up workdays |
 | `KR` | South Korea · 韩国 | fixed dates only — **no Seollal / Chuseok 不含春节秋夕** |
 | `MY` | Malaysia · 马来西亚 | fixed dates only — **no state / Islamic holidays 不含州与伊斯兰节** |
 
