@@ -15,6 +15,21 @@ a 2-night weekend against a 9-day bridge on absolute price.
 
 ---
 
+## 0. Fastest path — the local web UI
+
+```bash
+python3 web/server.py        # → http://127.0.0.1:8765
+```
+
+The page collects everything in §1 as a form: origin, holiday calendar, year,
+leave allowance, the windows worth using, the airports under consideration, and
+the style flags. It runs the same scanner and ranker and returns a ranked table.
+
+Use it when a human is present and wants to drive. Use the CLI path below when
+you are the one doing the planning, or when the answer has to be reproducible.
+
+---
+
 ## 1. Collect the inputs
 
 Ask for these; if the user has already volunteered them, do not re-ask.
@@ -52,6 +67,13 @@ Write the profile to `assets/traveller.yaml` so re-runs are cheap.
 python3 scripts/holidays.py --country SG --year 2027
 python3 scripts/holidays.py --file my-country.csv --year 2027   # other countries
 ```
+
+Bundled: `SG`, `HK`, `JP`, `AU`, `US`, `CN`, `KR`, `MY`. Each carries a
+confidence label — `official`, `rule-based`, or `fixed-dates-only` — and the
+command prints it. Only `SG` and `HK` are official; `CN`/`KR`/`MY` omit lunar
+festivals, so a Chinese New Year or Chuseok plan needs `--file` with the
+government's published dates. Never let a `fixed-dates-only` calendar silently
+stand in for a full one.
 
 This prints (a) the natural long weekends and (b) for each holiday, what 1, 2
 and 3 days of annual leave actually buy — anchored on that holiday, with a
@@ -234,6 +256,8 @@ These cost real debugging time; do not rediscover them.
 ## 9. Files
 
 ```
+web/server.py        local web UI (stdlib only)
+web/index.html       single-page front end
 scripts/gf.py        Google Flights fetch + parse (the engine)
 scripts/holidays.py  calendar -> windows -> leave-efficiency optimiser
 scripts/scan.py      batch scanner, resumable, job spec driven

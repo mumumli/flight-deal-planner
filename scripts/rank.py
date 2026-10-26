@@ -81,14 +81,8 @@ def choose(rows, scope, dur_cap=None):
     return best
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--fares", default="data/fares.jsonl")
-    ap.add_argument("--config", required=True)
-    ap.add_argument("--out", default="data/summary.json")
-    a = ap.parse_args()
-
-    cfg = json.load(open(a.config, encoding="utf-8"))
+def rank(fares_path, cfg):
+    """Score a fares JSONL against a config dict. Returns (items, stats)."""
     meta = cfg["destinations"]
     bags = cfg.get("baggage", {})
     long_windows = set(cfg.get("long_windows", []))
@@ -97,8 +91,8 @@ def main():
     today = parse_date(cfg.get("today", date.today().isoformat()))
     near = int(cfg.get("near_days", 64))
 
-    raw_all = [json.loads(l) for l in open(a.fares, encoding="utf-8")]
-    raw = [r for r in raw_all if r.get("rows")]
+    raw = [json.loads(l) for l in open(fares_path, encoding="utf-8")]
+    raw = [r for r in raw if r.get("rows")]
 
     cells = []
     for r in raw:
@@ -174,7 +168,20 @@ def main():
 
     order = {"red": 0, "green": 1, "amber": 2, "grey": 3, "skip": 9}
     items.sort(key=lambda x: (order[x["priority"]], x["per_night"]))
-    json.dump({"generated": today.isoformat(), "items": items, "route_stats": stats},
+    return items, stats
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--fares", default="data/fares.jsonl")
+    ap.add_argument("--config", required=True)
+    ap.add_argument("--out", default="data/summary.json")
+    a = ap.parse_args()
+
+    cfg = json.load(open(a.config, encoding="utf-8"))
+    items, stats = rank(a.fares, cfg)
+    json.dump({"generated": cfg.get("today", ""), "items": items,
+               "route_stats": stats},
               open(a.out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
     print(f"cells={len(items)}", Counter(i["priority"] for i in items))

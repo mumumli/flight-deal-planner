@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>flight-deal-planner</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0e1116;--panel:#161b23;--panel2:#12171f;--line:#242c38;--fg:#e6edf5;
+--dim:#8b98a9;--green:#31c48d;--amber:#f0b429;--red:#f26d6d;--blue:#5aa9f7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:14px/1.55 -apple-system,"Segoe UI",Roboto,"PingFang SC",sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 20px 70px}
+h1{font-size:22px;margin:0 0 4px}
+.lead{color:var(--dim);font-size:13px;margin:0 0 22px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+padding:16px 18px;margin-bottom:14px}
+.panel h2{font-size:14px;margin:0 0 12px;color:var(--blue);font-weight:600;
+letter-spacing:.02em;text-transform:uppercase}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+label{display:block;font-size:12px;color:var(--dim);margin-bottom:4px}
+input[type=text],input[type=number],select{background:var(--panel2);border:1px solid var(--line);
+color:var(--fg);border-radius:7px;padding:7px 9px;font-size:13px;font-family:inherit}
+input[type=text]{width:100%}
+select{cursor:pointer}
+button{background:var(--blue);color:#06121f;border:0;border-radius:8px;
+padding:9px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+button:disabled{opacity:.45;cursor:default}
+button.ghost{background:transparent;color:var(--dim);border:1px solid var(--line);font-weight:400}
+.wins{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-top:10px}
+.win{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 11px;
+cursor:pointer;font-size:12.5px;user-select:none}
+.win:hover{border-color:#2f3b4b}
+.win.on{border-color:var(--green);background:#12211b}
+.win b{font-size:13px}
+.win .meta{color:var(--dim);font-size:11.5px;margin-top:2px}
+.eff{color:var(--green);font-size:11px}
+.regions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.chip{background:var(--panel2);border:1px solid var(--line);color:var(--dim);
+border-radius:99px;padding:3px 11px;font-size:12px;cursor:pointer}
+.chip.on{background:#16283a;border-color:#27476b;color:var(--blue)}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:6px;
+max-height:290px;overflow:auto;padding:2px}
+.d{display:flex;gap:7px;align-items:baseline;background:var(--panel2);
+border:1px solid var(--line);border-radius:7px;padding:6px 9px;font-size:12.5px;cursor:pointer}
+.d:hover{border-color:#2f3b4b}
+.d.on{border-color:var(--blue);background:#12202e}
+.d .code{color:var(--dim);font-size:10.5px}
+.d .hrs{color:var(--dim);font-size:10.5px;margin-left:auto}
+.hint{color:var(--dim);font-size:12px}
+.bar{height:7px;background:var(--panel2);border-radius:99px;overflow:hidden;margin:10px 0 6px}
+.bar > i{display:block;height:100%;width:0;background:var(--blue);transition:width .3s}
+table{border-collapse:collapse;width:100%;font-size:12.5px;margin-top:10px}
+th,td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+th{color:var(--dim);font-weight:500;font-size:11.5px;text-transform:uppercase;
+letter-spacing:.03em;position:sticky;top:0;background:var(--bg)}
+td.num,th.num{text-align:right;white-space:nowrap}
+.badge{font-size:10.5px;padding:1px 7px;border-radius:99px;border:1px solid var(--line);
+white-space:nowrap}
+.b-red{color:var(--red);border-color:#5c2a2a}
+.b-green{color:var(--green);border-color:#1f5c46}
+.b-amber{color:var(--amber);border-color:#6b5420}
+.b-grey{color:var(--dim)}
+.dim{color:var(--dim)}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+.scroll{max-height:620px;overflow:auto}
+.err{color:var(--red);font-size:13px}
+</style>
+<div class="wrap">
+<h1>flight-deal-planner</h1>
+<p class="lead">Pick a holiday calendar, the windows worth using, and where you'd go.
+It scans live fares and ranks them by cost per night — then you write the reasons.</p>
+
+<div class="panel">
+  <h2>1 · Where from</h2>
+  <div class="row">
+    <div style="width:120px"><label>Origin (IATA)</label><input id="origin" type="text" value="SIN" maxlength="3"></div>
+    <div style="width:110px"><label>Currency</label>
+      <select id="currency"><option>SGD</option><option>USD</option><option>MYR</option>
+      <option>HKD</option><option>JPY</option><option>AUD</option><option>CNY</option></select></div>
+    <div style="width:150px"><label>Holiday calendar</label><select id="country"></select></div>
+    <div style="width:90px"><label>Year</label><input id="year" type="number" value="2027" min="2026" max="2030"></div>
+    <div style="width:110px"><label>Max leave days</label><input id="maxleave" type="number" value="3" min="0" max="5"></div>
+    <button class="ghost" id="btnWindows">Load windows</button>
+  </div>
+  <div id="winHint" class="hint" style="margin-top:8px"></div>
+  <div class="regions" style="margin-top:12px">
+    <span class="chip" id="pickBest">best per holiday</span>
+    <span class="chip" id="pickNoLeave">no leave needed</span>
+    <span class="chip" id="pickNone">clear</span>
+  </div>
+  <div id="wins" class="wins"></div>
+</div>
+
+<div class="panel">
+  <h2>2 · Where to</h2>
+  <div class="regions" id="regions"></div>
+  <input id="search" type="text" placeholder="filter airports or countries…" style="margin-bottom:8px">
+  <div id="dgrid" class="dgrid"></div>
+  <div class="hint" style="margin-top:8px"><span id="selCount">0</span> selected ·
+    right-click a destination to mark it <b>visited</b> (excluded from the scan)</div>
+</div>
+
+<div class="panel">
+  <h2>3 · Style</h2>
+  <div class="row">
+    <div style="width:210px"><label>Airlines</label>
+      <select id="airlines">
+        <option value="">All carriers</option>
+        <option value="TR,SQ" selected>Scoot + Singapore Airlines</option>
+        <option value="TR">Scoot only</option>
+        <option value="SQ">Singapore Airlines only</option>
+        <option value="AK,FD,QZ,TR">AirAsia + Scoot</option>
+      </select></div>
+    <div style="width:170px"><label>Outbound window</label>
+      <select id="outwin">
+        <option value="">Any time</option>
+        <option value="15,23" selected>After 15:00 (evening)</option>
+        <option value="17,23">After 17:00 (after work)</option>
+        <option value="6,12">Morning</option>
+      </select></div>
+    <div style="width:170px"><label>“Book now” horizon</label>
+      <select id="near"><option value="30">30 days</option><option value="64" selected>64 days</option>
+        <option value="120">120 days</option></select></div>
+    <button id="btnRun" disabled>Scan fares</button>
+  </div>
+  <div class="bar" id="bar" style="display:none"><i></i></div>
+  <div id="status" class="hint"></div>
+</div>
+
+<div id="results"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let CATALOG = [], COUNTRIES = [], selected = new Set(), visited = new Set(), windows = [], region = "All";
+
+async function boot(){
+  const r = await fetch("/api/catalog").then(x=>x.json());
+  CATALOG = r.destinations; COUNTRIES = r.countries;
+  $("#country").innerHTML = COUNTRIES.map(c=>`<option${c==="SG"?" selected":""}>${c}</option>`).join("");
+  const regions = ["All", ...new Set(CATALOG.map(d=>d.region))];
+  $("#regions").innerHTML = regions.map(x=>`<span class="chip${x==="All"?" on":""}" data-r="${x}">${x}</span>`).join("");
+  $("#regions").onclick = e => {
+    const c = e.target.closest(".chip"); if(!c) return;
+    region = c.dataset.r;
+    [...$("#regions").children].forEach(x=>x.classList.toggle("on", x===c));
+    renderDest();
+  };
+  renderDest(); loadWindows();
+}
+
+function renderDest(){
+  const q = ($("#search").value||"").toLowerCase();
+  const list = CATALOG.filter(d =>
+    (region==="All"||d.region===region) &&
+    (!q || (d.code+d.name+d.country).toLowerCase().includes(q)));
+  $("#dgrid").innerHTML = list.map(d=>{
+    const on = selected.has(d.code), vis = visited.has(d.code);
+    return `<div class="d${on?" on":""}" data-c="${d.code}" style="${vis?"opacity:.35":""}">
+      <span>${d.name}</span><span class="code">${d.code}</span><span class="hrs">${d.hours}h</span></div>`;
+  }).join("");
+  [...$("#dgrid").children].forEach(el=>{
+    el.onclick = ()=>{
+      const c = el.dataset.c;
+      if(visited.has(c)){ visited.delete(c); } else {
+        selected.has(c) ? selected.delete(c) : selected.add(c);
+      }
+      renderDest(); refreshRun();
+    };
+    el.oncontextmenu = e => {
+      e.preventDefault(); const c = el.dataset.c;
+      visited.has(c) ? visited.delete(c) : (visited.add(c), selected.delete(c));
+      renderDest(); refreshRun();
+    };
+  });
+  $("#selCount").textContent = selected.size;
+}
+
+$("#search").oninput = renderDest;
+
+async function loadWindows(){
+  const c = $("#country").value, y = $("#year").value, m = $("#maxleave").value;
+  $("#winHint").textContent = "loading…";
+  try{
+    const r = await fetch(`/api/holidays?country=${c}&year=${y}&max_leave=${m}`).then(x=>x.json());
+    if(r.error){ $("#winHint").textContent = r.error; return; }
+    windows = r.windows.filter(w=>w.days_off>=2);
+    $("#winHint").innerHTML = `${r.country} ${r.year} · <b>${r.confidence}</b> · ${r.source}` +
+      (r.confidence!=="official" ? " — <span style='color:var(--amber)'>verify before booking</span>" : "");
+    $("#wins").innerHTML = windows.map((w,i)=>{
+      const eff = w.efficiency ? `<span class="eff">${w.efficiency}×</span>` : `<span class="dim">no leave</span>`;
+      return `<div class="win" data-i="${i}"><b>${w.holiday}</b>
+        <div class="meta">${w.start.slice(5)} → ${w.end.slice(5)} · ${w.days_off}d off
+        · ${w.leave_days}d leave ${eff}</div></div>`;
+    }).join("");
+    [...$("#wins").children].forEach(el=>{
+      el.onclick = ()=>{ el.classList.toggle("on"); refreshRun(); };
+    });
+  }catch(e){ $("#winHint").textContent = "failed: "+e; }
+  refreshRun();
+}
+
+function pickedWindows(){
+  return [...document.querySelectorAll(".win.on")].map(el=>windows[+el.dataset.i]);
+}
+function refreshRun(){
+  const n = selected.size, w = pickedWindows().length;
+  $("#btnRun").disabled = !(n && w);
+  $("#btnRun").textContent = (n && w) ? `Scan ${n} × ${w} = ${n*w} cells` : "Scan fares";
+}
+
+function setWin(el, on){ el.classList.toggle("on", on); }
+$("#pickBest").onclick = ()=>{
+  const best = {};
+  windows.forEach((w,i)=>{ const k=w.holiday;
+    if(!best[k] || (w.days_off > windows[best[k]].days_off)) best[k]=i; });
+  const keep = new Set(Object.values(best));
+  [...$("#wins").children].forEach((el,i)=>setWin(el, keep.has(i)));
+  refreshRun();
+};
+$("#pickNoLeave").onclick = ()=>{
+  [...$("#wins").children].forEach((el,i)=>setWin(el, windows[i].leave_days===0));
+  refreshRun();
+};
+$("#pickNone").onclick = ()=>{
+  [...$("#wins").children].forEach(el=>setWin(el,false));
+  refreshRun();
+};
+
+$("#btnWindows").onclick = loadWindows;
+$("#country").onchange = loadWindows;
+
+$("#btnRun").onclick = async ()=>{
+  const spec = {
+    origin: $("#origin").value.trim().toUpperCase(),
+    currency: $("#currency").value,
+    destinations: [...selected],
+    windows: pickedWindows(),
+    airlines: $("#airlines").value ? $("#airlines").value.split(",") : [],
+    out_window: $("#outwin").value ? $("#outwin").value.split(",").map(Number) : [],
+    near_days: +$("#near").value,
+    exclude: [...visited]
+  };
+  $("#btnRun").disabled = true;
+  $("#bar").style.display = "block"; $("#bar").firstElementChild.style.width = "2%";
+  $("#status").textContent = "starting…";
+  $("#results").innerHTML = "";
+  let jid;
+  try{
+    const r = await fetch("/api/scan", {method:"POST",headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(spec)}).then(x=>x.json());
+    if(r.error){ $("#status").innerHTML = `<span class="err">${r.error}</span>`; $("#btnRun").disabled=false; return; }
+    jid = r.job_id;
+  }catch(e){ $("#status").innerHTML = `<span class="err">${e}</span>`; $("#btnRun").disabled=false; return; }
+  poll(jid);
+};
+
+async function poll(jid){
+  const r = await fetch("/api/job?id="+jid).then(x=>x.json());
+  if(r.error){ $("#status").innerHTML = `<span class="err">${r.error}</span>`; $("#btnRun").disabled=false; return; }
+  const pct = r.total ? Math.round(100*r.done/r.total) : 0;
+  $("#bar").firstElementChild.style.width = Math.max(2,pct)+"%";
+  $("#status").textContent = r.phase==="scanning"
+    ? `scanning ${r.done}/${r.total} cells…` + (r.best_seen?` cheapest so far ${r.best_seen}`:"")
+    : r.phase==="ranking" ? "ranking…" : r.phase==="error" ? r.error : "done";
+  if(r.phase==="done"){ $("#bar").firstElementChild.style.width="100%"; render(r.items); $("#btnRun").disabled=false; return; }
+  if(r.phase==="error"){ $("#btnRun").disabled=false; return; }
+  setTimeout(()=>poll(jid), 1400);
+}
+
+const BADGE={red:"b-red",green:"b-green",amber:"b-amber",grey:"b-grey"};
+const LABEL={red:"book now",green:"target",amber:"watch",grey:"reference"};
+
+function render(items){
+  const rows = items.filter(i=>i.priority!=="skip");
+  if(!rows.length){ $("#results").innerHTML = `<div class="panel"><p class="hint">No priced results.</p></div>`; return; }
+  rows.sort((a,b)=>a.per_night-b.per_night);
+  const body = rows.slice(0,120).map(i=>{
+    const b=i.bag, bag = b.add20 ? `${b.cabin}; +${b.add20}` : `${b.cabin}; ${b.checked}`;
+    const pct = i.rank==null ? '<span class="dim">n/a</span>'
+      : `${i.rank}/${i.n_windows} <span class="dim">(${i.vs_median>0?'+':''}${i.vs_median}%)</span>`;
+    return `<tr>
+      <td><b>${i.name}</b> <span class="dim">${i.dest}</span></td>
+      <td>${i.kind}<br><span class="dim">${i.out.slice(5)} → ${i.ret.slice(5)} · ${i.nights}n</span></td>
+      <td>${i.air}<br><span class="dim">${i.dep}→${i.arr}${i.plus?" +1":""} · ${i.dur}</span></td>
+      <td class="num"><b>${i.price}</b><br><span class="dim">${bag}</span></td>
+      <td class="num">${i.price_with_bag}<br><span class="dim">${i.per_night}/night</span></td>
+      <td class="num">${pct}</td>
+      <td><span class="badge ${BADGE[i.priority]}">${LABEL[i.priority]}</span>
+        ${i.confidence==="low"?'<br><span class="dim" style="font-size:10px">thin sample</span>':''}</td>
+      <td><a href="${i.url}" target="_blank" rel="noopener">check</a></td></tr>`;
+  }).join("");
+  $("#results").innerHTML = `<div class="panel"><h2>Results — $ ${rows.length} priced cells, cheapest first by cost per night</h2>
+    <div class="scroll"><table><thead><tr><th>Destination</th><th>Window</th><th>Flight</th>
+    <th class="num">Fare</th><th class="num">+bag / night</th><th class="num">Route percentile</th>
+    <th>Signal</th><th></th></tr></thead><tbody>${body}</tbody></table></div>
+    <p class="hint" style="margin-top:10px">Prices are snapshots without checked baggage. Re-check on the airline site
+    before booking. “Route percentile” is relative to the windows you just scanned, not historical.</p></div>`;
+}
+
+boot();
+</script>
+</html>

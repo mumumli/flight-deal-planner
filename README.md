@@ -10,18 +10,103 @@ questions. The cheapest fare in a spreadsheet is usually pointed at monsoon
 season, or at a country whose visa takes three weeks.
 
 ```
-Holiday calendar ──► windows ──► fare scan ──► season + visa filter ──► plan
+holiday calendar ──► windows ──► fare scan ──► season + visa filter ──► plan
+```
+
+![the web UI](examples/web-ui.png)
+
+---
+
+## Three ways to use it
+
+### 1. In a browser — no CLI
+
+```bash
+python3 web/server.py          # → http://127.0.0.1:8765
+```
+
+Pick origin, holiday calendar and year, tick the windows worth using, tick the
+airports you'd consider, and press **Scan**. It returns a ranked table: fare,
+baggage state, fare-with-a-20kg-bag, cost per night, and how the date compares
+to the other windows you scanned. Right-click an airport to mark it *visited* so
+it stops being suggested.
+
+Stdlib only — nothing to install beyond the two scraper dependencies.
+
+### 2. As an agent skill
+
+Drop the folder into your agent's skills directory (`~/.claude/skills/` or your
+harness's equivalent) and ask it *"plan my 2027 holidays"*. It will collect the
+profile in step 1 of `SKILL.md`, run the pipeline, and write the plan.
+
+### 3. As a library / CLI
+
+```bash
+python3 scripts/holidays.py --country SG --year 2027 --max-leave 3
+python3 scripts/scan.py   --spec job.json
+python3 scripts/rank.py   --fares data/fares.jsonl --config config.json
+python3 scripts/report.py --summary data/summary.json --out report.md
+```
+
+---
+
+## What it actually produces
+
+A real scan, unfiltered. Bali, April 2027, three nights, one day of leave:
+
+```
+### 2027-04-09 → 2027-04-12
+Bali DPS · Scoot TR282 16:05→19:00 (2h55) · S$178 round trip ·
+carry-on only, +S$38 for 20kg → S$216 · S$72/night ·
+lowest of the 36 windows scanned for this route
+```
+
+And the same week in Bangkok — where the full-service fare beats the low-cost one:
+
+```
+### 2027-01-29 → 2027-02-01
+Bangkok BKK · Singapore Airlines · S$276 round trip, 30kg checked included ·
+S$92/night · Scoot on the same dates is S$400, so the sale flips the ranking
+```
+
+`scripts/report.py` emits the factual skeleton with a `_fill in by hand_` marker;
+the *why* and the *what to do* are written by the agent from
+`references/seasonality.md`. A generated example is in
+[`examples/example-report.md`](examples/example-report.md).
+
+---
+
+## Holiday calendars
+
+| Code | Coverage | Confidence |
+|---|---|---|
+| `SG` | Singapore 2026, 2027 | **official** (MOM) |
+| `HK` | Hong Kong 2027 | **official** (gazetted gov.hk list) |
+| `JP` | Japan, any year | rule-based — equinox days ±1 day |
+| `AU` | Australia, any year | rule-based — national only, no state holidays |
+| `US` | United States, any year | rule-based — federal only, with observed shifting |
+| `CN` | mainland China | fixed dates only — **lunar festivals omitted** |
+| `KR` | South Korea | fixed dates only — **Seollal and Chuseok omitted** |
+| `MY` | Malaysia | fixed dates only — **state and Islamic holidays omitted** |
+
+Anything not rated `official` prints a warning, because a wrong holiday date
+produces a confidently wrong plan. For full coverage of any country:
+
+```bash
+python3 scripts/holidays.py --file my-holidays.csv --year 2027
+# my-holidays.csv:  2027-01-01,New Year
 ```
 
 ---
 
 ## What it does
 
-- **Finds the leave arbitrage.** For each public holiday it computes what 1, 2
-  or 3 days of annual leave actually buy, with a leave-efficiency ratio.
-  It knows a 9-day window from 3 days of leave beats a 4-day window from 1.
+- **Finds the leave arbitrage.** For each holiday it computes what 1, 2 or 3
+  days of annual leave actually buy, with a leave-efficiency ratio, anchored on
+  that holiday — not on whichever block elsewhere in the year happens to be
+  longest.
 - **Scans real prices**, not estimates — Google Flights, via its server-rendered
-  result page. Round-trip totals, per destination per window.
+  result page.
 - **Refuses the trap.** Cheapest fares cluster in each destination's worst
   month. Season is a filter, not a tiebreak.
 - **Compares fairly.** Cost per night, not absolute fare, when trip lengths
@@ -46,76 +131,26 @@ cd flight-deal-planner
 pip install -r scripts/requirements.txt
 ```
 
-Drop the folder into your agent's skills directory (e.g. `~/.claude/skills/` or
-your harness's equivalent). The `SKILL.md` frontmatter is all the loader needs.
-
 Python 3.9+.
 
 ---
 
-## Quickstart
-
-**1 — see what your holidays are worth**
-
-```bash
-python3 scripts/holidays.py --country SG --year 2027 --max-leave 3
-```
+## Repo layout
 
 ```
-SG 2027 — natural long weekends
-  2027-02-06 (Sat) -> 2027-02-08 (Mon)  3d  ['Chinese New Year', ...]
-  ...
-
-  anchor 2027-05-17 (Mon) Hari Raya Haji
-    2d leave -> 6d off (2027-05-15 .. 2027-05-20)  efficiency 3.0x
-    3d leave -> 9d off (2027-05-15 .. 2027-05-23)  efficiency 3.0x
-```
-
-Only Singapore is bundled. For any other country pass `--file holidays.csv`
-(`date,name` rows) from the official government calendar.
-
-**2 — scan fares**
-
-```bash
-cp assets/job.example.json job.json     # edit origin, destinations, windows
-python3 scripts/scan.py --spec job.json
-```
-
-Resumable: re-running skips cells already in the output file.
-
-**3 — rank**
-
-```bash
-cp assets/config.example.json config.json   # edit names, hours, baggage rules
-python3 scripts/rank.py --fares data/fares.jsonl --config config.json
-```
-
-**4 — report**
-
-```bash
-python3 scripts/report.py --summary data/summary.json --out report.md
-```
-
-`report.py` emits the factual skeleton. The *why* and the *what to do* are
-written by the agent on top of it — that part needs
-`references/seasonality.md`, not a formula.
-
----
-
-## The output contract
-
-Every recommendation carries four things, and a price missing its baggage state
-is treated as invalid:
-
-```
-### Good Friday — 26–29 Mar 2027 (3 nights, 1 day leave)
-**Go to:** Tokyo (HND)
-**Fly:** Scoot TR808, 26 Mar 17:35 → 01:25+1; return 29 Mar 06:10 → 12:45
-**Fare:** S$702 round trip, carry-on only (+S$65 for 20kg → S$767)
-**Why this one:** cherry blossom peaks 25 Mar – 5 Apr, so this window lands on
-  it; the fare is 25% under the route's own median; only 1 day of leave.
-**Do:** Ueno Park, Meguro River at dusk, day trip to Kamakura
-**Book by:** 30 Oct — the sale is round-trip only
+SKILL.md                       the method (what the agent executes)
+web/server.py                  local web UI, stdlib only
+web/index.html                 single-page front end
+references/seasonality.md      month × region table + monsoon asymmetries
+references/visa-and-entry.md   entry-friction framework + worked example
+references/fares-and-baggage.md fare brands, baggage economics, the two asymmetries
+scripts/gf.py                  Google Flights fetch + parse
+scripts/holidays.py            8 holiday calendars + leave optimiser
+scripts/scan.py                batch scanner (job spec driven, resumable)
+scripts/rank.py                scoring and bucketing
+scripts/report.py              Markdown brief skeleton
+assets/                        destination catalogue, example profile/job/config
+examples/                      a real generated report + UI screenshot
 ```
 
 ---
@@ -134,23 +169,6 @@ Known limits, all documented in `SKILL.md` §8:
 - **one-way ≠ half a round trip** on full-service carriers — a round-trip promo
   can be cheaper than a one-way
 - booking horizon is ~330 days; further out returns nothing
-
----
-
-## Repo layout
-
-```
-SKILL.md                       the method (what the agent executes)
-references/seasonality.md      month × region table + monsoon asymmetries
-references/visa-and-entry.md   entry-friction framework + worked example
-references/fares-and-baggage.md fare brands, baggage economics, the two asymmetries
-scripts/gf.py                  Google Flights fetch + parse
-scripts/holidays.py            calendar → windows → leave optimiser
-scripts/scan.py                batch scanner (job spec driven)
-scripts/rank.py                scoring and bucketing
-scripts/report.py              Markdown brief skeleton
-assets/                        example traveller profile, job spec, config
-```
 
 ---
 
