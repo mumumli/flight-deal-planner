@@ -1,0 +1,11 @@
+data/
+.cache/
+*.jsonl
+traveller.yaml
+config.json
+job.json
+report.md
+__pycache__/
+*.pyc
+venv/
+.chrome-tmp/

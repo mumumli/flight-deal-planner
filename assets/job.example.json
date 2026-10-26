@@ -1,0 +1,16 @@
+{
+  "_comment": "Scanner job spec. One query per destination x window.",
+  "origin": "SIN",
+  "currency": "SGD",
+  "destinations": ["DPS", "CGK", "HAN", "BKK", "KBV", "PQC"],
+  "windows": [
+    {"label": "CNY", "out": "2027-02-05", "ret": "2027-02-08", "kind": "4-day bridge"},
+    {"label": "HRP", "out": "2027-03-05", "ret": "2027-03-10", "kind": "5-day bridge"},
+    {"label": "GF",  "out": "2027-03-26", "ret": "2027-03-28", "kind": "long weekend"},
+    {"label": "MAY", "out": "2027-05-14", "ret": "2027-05-23", "kind": "9-day bridge"}
+  ],
+  "airlines": ["TR", "SQ"],
+  "out_window": [15, 23],
+  "workers": 5,
+  "out": "data/fares.jsonl"
+}

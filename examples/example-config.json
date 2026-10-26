@@ -1,0 +1,225 @@
+{
+ "home": "SIN",
+ "currency": "SGD",
+ "today": "2026-10-26",
+ "near_days": 64,
+ "long_windows": [
+  "YE26",
+  "CNY",
+  "HRP",
+  "GF",
+  "MAY6",
+  "MAY",
+  "NDP"
+ ],
+ "destinations": {
+  "DPS": {
+   "name": "Bali",
+   "country": "Indonesia",
+   "hours": 2.6,
+   "scope": "short",
+   "visa": "VOA ~USD 35"
+  },
+  "CGK": {
+   "name": "Jakarta",
+   "country": "Indonesia",
+   "hours": 1.8,
+   "scope": "short",
+   "visa": "VOA ~USD 35"
+  },
+  "BKK": {
+   "name": "Bangkok",
+   "country": "Thailand",
+   "hours": 2.4,
+   "scope": "short",
+   "visa": "visa-free 30d"
+  },
+  "DMK": {
+   "name": "Bangkok Don Mueang",
+   "country": "Thailand",
+   "hours": 2.4,
+   "scope": "short",
+   "visa": "visa-free 30d"
+  },
+  "HKT": {
+   "name": "Phuket",
+   "country": "Thailand",
+   "hours": 2.0,
+   "scope": "short",
+   "visa": "visa-free 30d"
+  },
+  "KBV": {
+   "name": "Krabi",
+   "country": "Thailand",
+   "hours": 2.0,
+   "scope": "short",
+   "visa": "visa-free 30d"
+  },
+  "HAN": {
+   "name": "Hanoi",
+   "country": "Vietnam",
+   "hours": 3.3,
+   "scope": "short",
+   "visa": "e-visa ~3 working days"
+  },
+  "DAD": {
+   "name": "Da Nang",
+   "country": "Vietnam",
+   "hours": 2.7,
+   "scope": "short",
+   "visa": "e-visa ~3 working days"
+  },
+  "CXR": {
+   "name": "Nha Trang",
+   "country": "Vietnam",
+   "hours": 2.2,
+   "scope": "short",
+   "visa": "e-visa ~3 working days"
+  },
+  "PQC": {
+   "name": "Phu Quoc",
+   "country": "Vietnam",
+   "hours": 2.0,
+   "scope": "short",
+   "visa": "island exemption 30d"
+  },
+  "NRT": {
+   "name": "Tokyo Narita",
+   "country": "Japan",
+   "hours": 7.0,
+   "scope": "long",
+   "visa": "check current rule",
+   "dur_cap": 600
+  },
+  "HND": {
+   "name": "Tokyo Haneda",
+   "country": "Japan",
+   "hours": 6.9,
+   "scope": "long",
+   "visa": "check current rule",
+   "dur_cap": 600
+  },
+  "TPE": {
+   "name": "Taipei",
+   "country": "Taiwan",
+   "hours": 4.8,
+   "scope": "long",
+   "visa": "entry permit ~2-3 weeks",
+   "dur_cap": 360
+  },
+  "PER": {
+   "name": "Perth",
+   "country": "Australia",
+   "hours": 5.2,
+   "scope": "long",
+   "visa": "check current rule",
+   "dur_cap": 480
+  },
+  "SYD": {
+   "name": "Sydney",
+   "country": "Australia",
+   "hours": 8.0,
+   "scope": "long",
+   "visa": "check current rule",
+   "dur_cap": 720
+  },
+  "DXB": {
+   "name": "Dubai",
+   "country": "UAE",
+   "hours": 7.6,
+   "scope": "long",
+   "visa": "visa on arrival",
+   "dur_cap": 780
+  }
+ },
+ "baggage": {
+  "Scoot": {
+   "tier": "low-cost",
+   "cabin": "10kg, 2 pieces",
+   "checked": "none",
+   "add20": 38
+  },
+  "AirAsia": {
+   "tier": "low-cost",
+   "cabin": "7kg",
+   "checked": "none",
+   "add20": 42
+  },
+  "Thai AirAsia": {
+   "tier": "low-cost",
+   "cabin": "7kg",
+   "checked": "none",
+   "add20": 42
+  },
+  "VietJet": {
+   "tier": "low-cost",
+   "cabin": "7kg, 2 pieces",
+   "checked": "none",
+   "add20": 29
+  },
+  "Batik Air": {
+   "tier": "mixed",
+   "cabin": "7kg",
+   "checked": "brand-dependent",
+   "add20": 35
+  },
+  "Malaysia Airlines": {
+   "tier": "full-service",
+   "cabin": "7kg",
+   "checked": "20kg included",
+   "add20": 0
+  },
+  "Singapore Airlines": {
+   "tier": "full-service",
+   "cabin": "7kg",
+   "checked": "30kg included",
+   "add20": 0
+  },
+  "Thai Airways": {
+   "tier": "full-service",
+   "cabin": "7kg",
+   "checked": "20kg included",
+   "add20": 0
+  },
+  "Vietnam Airlines": {
+   "tier": "full-service",
+   "cabin": "10kg",
+   "checked": "20kg included",
+   "add20": 0
+  },
+  "Garuda Indonesia": {
+   "tier": "full-service",
+   "cabin": "7kg",
+   "checked": "20kg included",
+   "add20": 0
+  },
+  "China Airlines": {
+   "tier": "full-service",
+   "cabin": "7kg",
+   "checked": "23kg included",
+   "add20": 0
+  },
+  "Emirates": {
+   "tier": "full-service",
+   "cabin": "7kg",
+   "checked": "25kg included",
+   "add20": 0
+  },
+  "Qantas": {
+   "tier": "full-service",
+   "cabin": "7kg",
+   "checked": "30kg included",
+   "add20": 0
+  },
+  "KLM": {
+   "tier": "full-service",
+   "cabin": "12kg",
+   "checked": "23kg included",
+   "add20": 0
+  }
+ },
+ "exclude": {
+  "destinations": [],
+  "windows": []
+ }
+}

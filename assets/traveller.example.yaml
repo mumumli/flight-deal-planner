@@ -1,0 +1,38 @@
+# Who is travelling, and what they will and will not accept.
+# Copy to traveller.yaml and edit. This file is the only place personal
+# preferences live; scripts read it, nothing else does.
+
+origin: SIN
+home_country: SG          # whose public holidays define the calendar
+planning_year: 2027
+
+# --- destinations -----------------------------------------------------------
+must_go: [NRT]            # scan regardless of price
+would_revisit: [DPS, SYD] # "happy to go back" — a cheap fare here is a bonus
+visited:                  # do not re-recommend as new
+  - KUL
+  - BKI
+  - PEN
+  - SGN
+  - KCH
+  - HKT                   # already booked, so treat as visited
+
+mood: [food, nature, city]   # free-form tags, used when writing "what to do"
+
+# --- style ------------------------------------------------------------------
+style:
+  red_eye: high             # high | medium | low
+  baggage: carry-on         # carry-on | checked
+  trip_shape: weekend-warrior   # weekend-warrior | holiday-only
+  max_flight_hours: 12      # absolute cap for a long holiday
+  weekend_max_hours: 4      # cap for an ordinary weekend
+
+# --- allowance --------------------------------------------------------------
+leave_days_per_year: 14
+budget_per_trip: 700        # optional, in `currency`; omit for no cap
+currency: SGD
+
+# --- verification -----------------------------------------------------------
+# Secondary source for the shortlist. Optional; the pipeline works without it,
+# but flight numbers and a one-way cross-check come from here.
+verify_with: pricewin       # pricewin | airline-site | none

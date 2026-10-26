@@ -1,0 +1,26 @@
+{
+  "_comment": "Destination metadata + baggage rules for rank.py.",
+  "home": "SIN",
+  "currency": "SGD",
+  "today": "2026-10-26",
+  "near_days": 64,
+  "long_windows": ["CNY", "HRP", "MAY", "MAY6", "NDP"],
+  "destinations": {
+    "DPS": {"name": "Bali", "country": "Indonesia", "hours": 2.6, "scope": "short", "visa": "VOA ~USD 35"},
+    "CGK": {"name": "Jakarta", "country": "Indonesia", "hours": 1.8, "scope": "short", "visa": "VOA ~USD 35"},
+    "BKK": {"name": "Bangkok", "country": "Thailand", "hours": 2.4, "scope": "short", "visa": "visa-free 30d"},
+    "HAN": {"name": "Hanoi", "country": "Vietnam", "hours": 3.3, "scope": "short", "visa": "e-visa ~3 working days"},
+    "KBV": {"name": "Krabi", "country": "Thailand", "hours": 2.0, "scope": "short", "visa": "visa-free 30d"},
+    "PQC": {"name": "Phu Quoc", "country": "Vietnam", "hours": 2.0, "scope": "short", "visa": "island exemption 30d"},
+    "NRT": {"name": "Tokyo Narita", "country": "Japan", "hours": 7.0, "scope": "long", "visa": "check current rule", "dur_cap": 600}
+  },
+  "baggage": {
+    "Scoot": {"tier": "low-cost", "cabin": "10kg, 2 pieces", "checked": "none", "add20": 38},
+    "AirAsia": {"tier": "low-cost", "cabin": "7kg", "checked": "none", "add20": 42},
+    "VietJet": {"tier": "low-cost", "cabin": "7kg, 2 pieces", "checked": "none", "add20": 29},
+    "Singapore Airlines": {"tier": "full-service", "cabin": "7kg", "checked": "30kg included", "add20": 0},
+    "Thai Airways": {"tier": "full-service", "cabin": "7kg", "checked": "20kg included", "add20": 0},
+    "Vietnam Airlines": {"tier": "full-service", "cabin": "10kg", "checked": "20kg included", "add20": 0}
+  },
+  "exclude": {"destinations": [], "windows": []}
+}
