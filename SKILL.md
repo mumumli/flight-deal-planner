@@ -5,6 +5,9 @@ description: Plan a year of trips around a country's public holidays by scanning
 
 # Flight Deal Planner
 
+Repo: <https://github.com/mumumli/flight-deal-planner> · quickest path is
+`python3 web/server.py` (see §0).
+
 Turns a holiday calendar plus a traveller profile into a dated, priced,
 justified travel plan: **which holiday → which destination → which flight →
 why → what to do there.**
